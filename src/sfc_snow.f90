@@ -1524,113 +1524,47 @@ l_mass  = 0.0
        IF(l_top .GT. 1) THEN  !!!snow on the ground
 
 
-         !CALL solve_1d_heat(dzm_sn_now(i,:), t_sn_now(i,:), t_sn_sfc(i), for_sn(i), swabs_sn(i,:)  , &
-         !                   zm_sn(i,:), hcap_sn(i,:), hcon_sn(i,:), hdif_sn(i,:), rho_sn(i,:)      , &
-         !                   top(i), t_so_now(i,:), zmls(:), zroc(i,:), zalam(i,:)                  , & 
-         !                   ke_soil, zdt   )   
-
-         !! inlining the heat solver
-
-        zm    = 0.0_vpp
-        hcon  = 0.0_vpp
-        hcap  = 0.0_vpp
-        rho   = 0.0_vpp
-        t_sol = 0.0_vpp
-        sw_abs  = 0.0_vpp
-        counter = 1
-  
-        do ksn = -l_top+1, ke_soil+1, 1
-
-               IF(ksn .LE. 0) THEN  ! snow layers
-                   IF(ksn .EQ. -l_top+1) THEN
-                        zm(ksn)     = zm_sn(i,l_top)
-                        hcon(ksn)   = hcon_sn(i,l_top)
-                        hcap(ksn)   = hcap_sn(i,l_top)
-                        t_sol(ksn)  = t_sn_now(i,l_top)
-                        sw_abs(ksn) = swabs_sn(i,l_top)
-                   ELSE
-                        zm(ksn)     = zm_sn(i,l_top-counter)
-                        hcon(ksn)   = hcon_sn(i,l_top-counter)
-                        hcap(ksn)   = hcap_sn(i,l_top-counter)
-                        t_sol(ksn)  = t_sn_now(i,l_top-counter)
-                        sw_abs(ksn) = swabs_sn(i,l_top-counter)
-                        counter = counter + 1
-                   ENDIF
-
-               ELSE  ! soil layers
-                        zm(ksn)     = zm_sn(i,1) + zmls(ksn)
-                        !hcon(ksn)   = zalam(i,ksn)
-                        hcap(ksn)   = zroc(i,ksn)
-                        t_sol(ksn)  = t_so_now(i,ksn)
-                        sw_abs(ksn) = 0.0_vpp
-               ENDIF
-
-        ENDDO ! end of snow layers
-
-        hcon(1:ke_soil) = zalam(i,1:ke_soil)
-  ! ------------------------------------------------------------
-  ! Some precalculations ...
-  ! ------------------------------------------------------------
-
-  ! Derivative of emitted long wave radiation
-  ! ----------------------
-
-    dlw_u_sn = 0.0 !  -4.0_vpp * sigma * (1.0_vpp - snow_Ctalb) * t_sol(-l_top+1)**3
-     
-
-  ! Calculate factors (diffusion) for the linear equations for ...
-  ! ----------------------
-
-    ! Loop over all layers ...
-    DO ksn = -l_top+1, ke_soil, 1
-      IF(ksn .LE. ke_soil-1) THEN ! ... except
-        alpha(ksn)   = dt / hcap(ksn)
-        hdif(ksn) = hcon(ksn) * (t_sol(ksn+1) - t_sol(ksn)) /  (zm(ksn+1) - zm(ksn))
-      ELSE !(ksn == substrate) ! ... bottom layer
-         alpha(ksn) = dt / hcap(ksn)
-         hdif(ksn) = 0.0_vpp
-      ENDIF
-    END DO
+  counter = 0
+  DO ksn = l_top+1,1
+    counter = counter+1
 
 
- ! ------------------------------------------------------------
-  ! Setup tridiagonal matrix for set of linear equations for each layer ...
-  ! ------------------------------------------------------------
 
-  DO ksn = -l_top+1, ke_soil
+    IF(counter .EQ. 1) THEN ! ... top layer
 
-    IF(ksn .EQ. -l_top+1) THEN ! ... TOP LAYER
+      alpha_solver_up   = dzm_sn_now(i,ksn-1) / ( 6.0_vpp * dt )
+      beta_solver_up    = ( hcon_sn(i,ksn-1) / ( rho_sn(i,ksn-1)*hcap_sn(i,ksn-1) ) ) * (1.0_vpp/dzm_sn_now(i,ksn-1))
 
-    dz_low = zm(ksn+1) - zm(ksn)
+      a(counter)     =  0.0_vpp
+      b(counter)     =  2.0 * alpha_solver_up + beta_solver_up
+      c(counter)     =  alpha_solver_up - beta_solver_up
 
-      a(ksn)     = 0.0_vpp
-      b(ksn)     = 1 + (1.0_vpp - cn) * alpha(ksn) * hcon(ksn)/dz_low - alpha(ksn) * dlw_u_sn
-      c(ksn)     = -   (1.0_vpp - cn) * alpha(ksn) * hcon(ksn)/dz_low
+      d(counter)     =  2.0_vpp * alpha_solver_up * t_sn_now(i,ksn) + alpha_solver_up * t_sn_now(i,ksn-1)
 
-      d(ksn)     = t_sol(ksn) + alpha(ksn) * (for_sn(i) - dlw_u_sn*t_sol(ksn) + cn*hdif(ksn))
+    ELSEIF (counter .EQ. l_top) THEN ! ... Bottom layer
 
-    ELSEIF (ksn .LE. ke_soil-1) THEN ! ... INNER LAYERS
+        a(counter) = 0.0_vpp
+        b(counter) = 1.0_vpp
+        c(counter) = 0.0_vpp
+ 
+        d(counter) = lower_bc  
 
-     dz_up  = zm(ksn)   - zm(ksn-1)
-     dz_low = zm(ksn+1) - zm(ksn)
+    ELSE  ! Middle layers
 
-        a(ksn) = -         (1.0_vpp - cn)   * alpha(ksn) *  hcon(ksn-1)/dz_up
-        b(ksn) = 1.0_vpp + (1.0_vpp - cn)   * alpha(ksn) * (hcon(ksn)  /dz_low + hcon(ksn-1)/dz_up)
-        c(ksn) = -         (1.0_vpp - cn)   * alpha(ksn) *  hcon(ksn)  /dz_low
+        alpha_solver_up  = dzm_sn_now(i,ksn) / ( 6.0_vpp * dt )
+        beta_solver_up   = ( hcon_sn(i,ksn) / ( rho_sn(i,ksn)*hcap_sn(i,ksn) ) ) * (1.0_vpp/dzm_sn_now(i,ksn))
 
-        d(ksn) = t_sol(ksn) + cn*alpha(ksn) * (hdif(ksn) - hdif(ksn-1)) + alpha(ksn)*sw_abs(ksn)
+        alpha_solver_down = dzm_sn_now(i,ksn-1) / ( 6.0_vpp * dt )
+        beta_solver_down  = ( hcon_sn(i,ksn-1) / ( rho_sn(i,ksn-1)*hcap_sn(i,ksn-1) ) ) * (1.0_vpp/dzm_sn_now(i,ksn-1))
 
+        a(counter) = alpha_solver_up - beta_solver_up 
+        b(counter) = 2.0_vpp * (alpha_solver_up + alpha_solver_down) + beta_solver_up + beta_solver_down 
+        c(counter) = alpha_solver_down - beta_solver_down
 
-    ELSEIF (ksn .EQ. ke_soil) THEN ! BOTTOM LAYERS
+        d(counter) = alpha_solver_up * t_sn_now(i,ksn+1) + 
+                     2.0_vpp * (alpha_solver_up + alpha_solver_down) * t_sn_now(i,ksn) +
+                     alpha_solver_down * t_sn_now(i,ksn-1)
 
-     dz_up = zm(ksn)   - zm(ksn-1)
-
-       a(ksn) = -         (1.0_vpp - cn) * alpha(ksn) * hcon(ksn-1)/dz_up
-       b(ksn) = 1.0_vpp + (1.0_vpp - cn) * alpha(ksn) * hcon(ksn-1)/dz_up
-       c(ksn) = 0.0_vpp
-
-       !d(bot_idx) = t(bot_idx) - cn*alpha(bot_idx-1) + alpha(bot_idx)*hdif(bot_idx)
-       d(ksn)     = t_sol(ksn) - cn*alpha(ksn)*hdif(ksn-1) + alpha(ksn)*hdif(ksn)
 
     ENDIF
 
@@ -1640,45 +1574,12 @@ l_mass  = 0.0
   ! Solve the system - Thomas Algorithm
   ! ------------------------------------------------------------
 
-   beta = b(-l_top+1)
-    ! Forward substitution
-
-    DO ksn = -l_top+1, ke_soil, 1
-      IF(ksn .GE. -l_top+1) THEN
-        IF(ksn .EQ. -l_top+1) THEN
-          e(ksn) = d(ksn) / beta
-        ELSE
-          gamma_sol(ksn) = c(ksn-1) / beta
-          beta       = b(ksn) - a(ksn) * gamma_sol(ksn)
-          e(ksn)     = (d(ksn) - a(ksn) * e(ksn-1)) / beta
-        ENDIF
-      ENDIF
-    ENDDO
-
-    ! Backward substitution
-
-    DO ksn = ke_soil-1, -l_top+1, -1
-      IF(ksn .GE. -l_top+1) THEN
-        e(ksn) = e(ksn) - gamma_sol(ksn+1) * e(ksn+1)
-      ENDIF
-    ENDDO
 
    ! ------------------------------------------------------------
    ! Do some updating required for the next sections
    ! ------------------------------------------------------------
    ! Snow Surface Temperature
 
-    t_sn_sfc(i) = e(-l_top+1)
-    ! Snow layer temperature
-    counter = 1
-    DO ksn = l_top,1,-1
-      IF(ksn .EQ. l_top) THEN
-       t_sn_now(i,ksn)    = e(-l_top+1)
-      ELSE
-       t_sn_now(i,ksn)    = e(-l_top+1+counter)
-       counter = counter + 1
-      ENDIF
-    ENDDO
 
        ENDIF
 
