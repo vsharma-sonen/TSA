@@ -1,0 +1,39 @@
+#########
+# gfortran 
+#########
+#
+# define NetCDF and GRIB-API installation directories
+#NCDFDIR      = /uwork1/uschaett/lib_gfortran/netcdf-4.4.1.1
+GRIBDIR      = /home/varun/TERRA/libraries/install_dir/
+LAECDIR      = /home/varun/TERRA/libraries/install_dir/lib
+LIBGRIB1     = /home/varun/TERRA/libraries/install_dir/lib/libgrib1.a
+
+# compiler call
+#F90          = gfortran -cpp -c  -ffree-line-length-0 -fcheck=all -ffpe-trap=invalid,zero,overflow  -g -fbacktrace  \
+#               -I$(SRCDIR) -I$(GRIBDIR)/include                                                       \
+#               -D__COSMO__ 
+
+F90          = gfortran -cpp -c -ffree-line-length-0 -g -fbacktrace  \
+               -I$(SRCDIR) -I$(GRIBDIR)/include                                                       \
+               -D__COSMO__ 
+
+
+#              -DSINGLEPRECISION -DVAR_PHYSICS_PREC
+
+COMFLG1      = -Ofast -funroll-loops -ftree-vectorize # -g -fbacktrace -fimplicit-none -fcheck=all 
+COMFLG2      = -O0 -g -fbacktrace -fcheck=all -fimplicit-none -Wall -pedantic -ffpe-trap=invalid,zero,overflow,underflow,denormal -finit-real=nan
+COMFLG3      = $(COMFLG1)
+COMFLG4      = #-O0 -g
+#
+# linker
+LDPAR        = mpif90   -g
+LDSEQ        = gfortran
+LDFLAGS      = 
+#
+# standard binary
+PROGRAM      = tsa_exec
+#
+LIB          = $(LIBGRIB1)                                 \
+               -L$(GRIBDIR)/lib      -L$(LAECDIR)                                     \
+               -leccodes_f90 -leccodes   -laec                                          \
+               -lm -lpng -ljasper

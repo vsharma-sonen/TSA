@@ -1,0 +1,221 @@
+#
+####################################################
+#
+#     Dependencies of the COSMO Modules used
+#
+####################################################
+#
+$(OBJDIR)/kind_parameters.o:            $(SRCDIR)/kind_parameters.f90
+	echo compiling kind_parameters.f90
+	( cd $(OBJDIR) && $(F90) $(COMFLG2) $(SRCDIR)/kind_parameters.f90 )
+#
+$(OBJDIR)/data_block_fields.o:         $(SRCDIR)/data_block_fields.f90        \
+           $(OBJDIR)/kind_parameters.o
+	echo compiling data_block_fields.f90
+	( cd $(OBJDIR) && $(F90) $(COMFLG1) $(SRCDIR)/data_block_fields.f90 )
+#
+$(OBJDIR)/data_constants.o:            $(SRCDIR)/data_constants.f90           \
+           $(OBJDIR)/kind_parameters.o
+	echo compiling data_constants.f90
+	( cd $(OBJDIR) && $(F90) $(COMFLG1) $(SRCDIR)/data_constants.f90 )
+#
+$(OBJDIR)/data_fields.o:               $(SRCDIR)/data_fields.f90              \
+           $(OBJDIR)/kind_parameters.o
+	echo compiling data_fields.f90
+	( cd $(OBJDIR) && $(F90) $(COMFLG1) $(SRCDIR)/data_fields.f90 )
+#
+$(OBJDIR)/data_io.o:                   $(SRCDIR)/data_io.f90                  \
+           $(OBJDIR)/kind_parameters.o                                        \
+           $(data_io_newdep)
+	echo compiling data_io.f90
+	( cd $(OBJDIR) && $(F90) $(COMFLG1) $(SRCDIR)/data_io.f90 )
+#
+$(OBJDIR)/data_modelconfig.o:          $(SRCDIR)/data_modelconfig.f90         \
+           $(OBJDIR)/kind_parameters.o
+	echo compiling data_modelconfig.f90
+	( cd $(OBJDIR) && $(F90) $(COMFLG1) $(SRCDIR)/data_modelconfig.f90 )
+#
+$(OBJDIR)/data_parallel.o:             $(SRCDIR)/data_parallel.f90            \
+           $(OBJDIR)/kind_parameters.o
+	echo compiling data_parallel.f90
+	( cd $(OBJDIR) && $(F90) $(COMFLG1) $(SRCDIR)/data_parallel.f90 )
+#
+$(OBJDIR)/data_runcontrol.o:           $(SRCDIR)/data_runcontrol.f90          \
+           $(OBJDIR)/kind_parameters.o
+	echo compiling data_runcontrol.f90
+	( cd $(OBJDIR) && $(F90) $(COMFLG1) $(SRCDIR)/data_runcontrol.f90 )
+#
+$(OBJDIR)/turb_data.o:                       $(SRCDIR)/turb_data.f90          \
+          $(OBJDIR)/kind_parameters.o
+	echo compiling turb_data.f90
+	( cd $(OBJDIR) && $(F90) $(COMFLG1) $(SRCDIR)/turb_data.f90 )
+#
+$(OBJDIR)/meteo_utilities.o:                 $(SRCDIR)/meteo_utilities.f90    \
+          $(OBJDIR)/kind_parameters.o
+	echo compiling meteo_utilities.f90
+	( cd $(OBJDIR) && $(F90) $(COMFLG1) $(SRCDIR)/meteo_utilities.f90 )
+#
+$(OBJDIR)/utilities.o:                       $(SRCDIR)/utilities.f90          \
+          $(OBJDIR)/kind_parameters.o        $(OBJDIR)/data_constants.o
+	echo compiling utilities.f90
+	( cd $(OBJDIR) && $(F90) $(COMFLG1) $(SRCDIR)/utilities.f90 )
+#
+$(OBJDIR)/sfc_terra_data.o:                  $(SRCDIR)/sfc_terra_data.f90     \
+          $(OBJDIR)/kind_parameters.o
+	echo compiling sfc_terra_data.f90
+	( cd $(OBJDIR) && $(F90) $(COMFLG1) $(SRCDIR)/sfc_terra_data.f90 )
+#
+$(OBJDIR)/sfc_terra_init.o:                  $(SRCDIR)/sfc_terra_init.f90     \
+          $(OBJDIR)/kind_parameters.o        $(OBJDIR)/data_constants.o       \
+          $(OBJDIR)/data_io.o                $(OBJDIR)/data_runcontrol.o      \
+          $(OBJDIR)/sfc_terra_data.o
+	echo compiling sfc_terra_init.f90
+	( cd $(OBJDIR) && $(F90) $(COMFLG1) $(SRCDIR)/sfc_terra_init.f90 )
+#
+$(OBJDIR)/sfc_terra.o:                       $(SRCDIR)/sfc_terra.f90          \
+          $(OBJDIR)/kind_parameters.o        $(OBJDIR)/data_constants.o       \
+          $(OBJDIR)/data_runcontrol.o        $(OBJDIR)/data_parallel.o        \
+          $(OBJDIR)/sfc_terra_data.o         $(OBJDIR)/turb_data.o
+	echo compiling sfc_terra.f90
+	( cd $(OBJDIR) && $(F90) $(COMFLG1) $(SRCDIR)/sfc_terra.f90 )
+#
+$(OBJDIR)/sfc_utilities.o:                   $(SRCDIR)/sfc_utilities.f90      \
+          $(OBJDIR)/kind_parameters.o        $(OBJDIR)/data_constants.o       \
+          $(OBJDIR)/data_runcontrol.o        $(OBJDIR)/sfc_terra_data.o
+#         $(OBJDIR)/sfc_flake_data.o         $(OBJDIR)/sfc_seaice.o
+	echo compiling sfc_utilities.f90     
+	( cd $(OBJDIR) && $(F90) $(COMFLG1) $(SRCDIR)/sfc_utilities.f90 )     
+#
+#
+$(OBJDIR)/sfc_snow_data.o:                  $(SRCDIR)/sfc_snow_data.f90     \
+          $(OBJDIR)/kind_parameters.o
+	echo compiling sfc_snow_data.f90
+	( cd $(OBJDIR) && $(F90) $(COMFLG1) $(SRCDIR)/sfc_snow_data.f90 )
+#
+$(OBJDIR)/sfc_snow_utilities.o:              $(SRCDIR)/sfc_snow_utilities.f90     \
+          $(OBJDIR)/kind_parameters.o        $(OBJDIR)/data_constants.o           \
+          $(OBJDIR)/data_io.o                $(OBJDIR)/data_runcontrol.o          \
+          $(OBJDIR)/sfc_snow_data.o
+	echo compiling sfc_snow_utilities.f90
+	( cd $(OBJDIR) && $(F90) $(COMFLG1) $(SRCDIR)/sfc_snow_utilities.f90 )
+#
+$(OBJDIR)/sfc_snow_init.o:                  $(SRCDIR)/sfc_snow_init.f90     \
+          $(OBJDIR)/kind_parameters.o        $(OBJDIR)/data_constants.o     \
+          $(OBJDIR)/data_io.o                $(OBJDIR)/data_runcontrol.o    \
+          $(OBJDIR)/sfc_snow_data.o          $(OBJDIR)/sfc_snow_utilities.o 
+	echo compiling sfc_snow_init.f90
+	( cd $(OBJDIR) && $(F90) $(COMFLG1) $(SRCDIR)/sfc_snow_init.f90 )
+#
+$(OBJDIR)/sfc_snow.o:                       $(SRCDIR)/sfc_snow.f90          \
+          $(OBJDIR)/kind_parameters.o        $(OBJDIR)/data_constants.o     \
+          $(OBJDIR)/data_runcontrol.o        $(OBJDIR)/data_parallel.o      \
+          $(OBJDIR)/sfc_snow_data.o          $(OBJDIR)/turb_data.o          \
+          $(OBJDIR)/sfc_snow_utilities.o     $(OBJDIR)/fxtr_definition.o   
+	echo compiling sfc_snow.f90
+	( cd $(OBJDIR) && $(F90) $(COMFLG1) $(SRCDIR)/sfc_snow.f90 )
+#
+
+####################################################
+#
+#     Dependencies of the TSA Modules
+#
+####################################################
+#
+$(OBJDIR)/tsa_data.o:                  $(SRCDIR)/tsa_data.f90                 \
+          $(OBJDIR)/kind_parameters.o
+	echo compiling tsa_data.f90
+	( cd $(OBJDIR) && $(F90) $(COMFLG1) $(SRCDIR)/tsa_data.f90 )
+#
+$(OBJDIR)/tsa_setup.o:                 $(SRCDIR)/tsa_setup.f90                \
+          $(OBJDIR)/kind_parameters.o                                         \
+          $(OBJDIR)/data_block_fields.o      $(OBJDIR)/data_fields.o          \
+          $(OBJDIR)/data_io.o                                                 \
+          $(OBJDIR)/data_modelconfig.o       $(OBJDIR)/data_runcontrol.o      \
+          $(OBJDIR)/sfc_terra_data.o                                          \
+          $(OBJDIR)/utilities.o                                               \
+          $(OBJDIR)/fxtr_definition.o        $(OBJDIR)/support_datetime.o     \
+          $(OBJDIR)/tsa_data.o               $(OBJDIR)/tsa_lmparam.o          \
+          $(OBJDIR)/tsa_gribio.o
+	echo compiling tsa_setup.f90
+	( cd $(OBJDIR) && $(F90) $(COMFLG1) $(SRCDIR)/tsa_setup.f90 )
+#
+$(OBJDIR)/tsa_gribio.o:                $(SRCDIR)/tsa_gribio.f90               \
+          $(OBJDIR)/kind_parameters.o                                         \
+          $(OBJDIR)/data_io.o                                                 \
+          $(OBJDIR)/tsa_data.o
+	echo compiling tsa_gribio.f90
+	( cd $(OBJDIR) && $(F90) $(COMFLG1) $(SRCDIR)/tsa_gribio.f90 )
+#
+$(OBJDIR)/tsa_input.o:                 $(SRCDIR)/tsa_input.f90                \
+          $(OBJDIR)/kind_parameters.o                                         \
+          $(OBJDIR)/data_constants.o                                          \
+          $(OBJDIR)/data_io.o                $(OBJDIR)/data_fields.o          \
+          $(OBJDIR)/data_modelconfig.o       $(OBJDIR)/data_runcontrol.o      \
+          $(OBJDIR)/sfc_terra_data.o         $(OBJDIR)/data_runcontrol.o      \
+          $(OBJDIR)/meteo_utilities.o        $(OBJDIR)/utilities.o            \
+          $(OBJDIR)/support_datetime.o       $(OBJDIR)/fxtr_definition.o      \
+          $(OBJDIR)/tsa_data.o               $(OBJDIR)/tsa_gribio.o           \
+          $(OBJDIR)/tsa_lmparam.o            $(OBJDIR)/tsa_interpol.o
+	echo compiling tsa_input.f90
+	( cd $(OBJDIR) && $(F90) $(COMFLG1) $(SRCDIR)/tsa_input.f90 )
+#
+$(OBJDIR)/tsa_output.o:                $(SRCDIR)/tsa_output.f90               \
+          $(OBJDIR)/kind_parameters.o                                         \
+          $(OBJDIR)/data_constants.o                                          \
+          $(OBJDIR)/data_io.o                $(OBJDIR)/data_fields.o          \
+          $(OBJDIR)/data_modelconfig.o       $(OBJDIR)/data_runcontrol.o      \
+          $(OBJDIR)/sfc_terra_data.o         $(OBJDIR)/data_runcontrol.o      \
+          $(OBJDIR)/tsa_data.o               $(OBJDIR)/tsa_gribio.o
+	echo compiling tsa_output.f90
+	( cd $(OBJDIR) && $(F90) $(COMFLG1) $(SRCDIR)/tsa_output.f90 )
+#
+$(OBJDIR)/tsa_lmparam.o:               $(SRCDIR)/tsa_lmparam.f90              \
+          $(OBJDIR)/kind_parameters.o                                         \
+          $(OBJDIR)/data_constants.o         $(OBJDIR)/data_fields.o          \
+          $(OBJDIR)/data_modelconfig.o       $(OBJDIR)/data_runcontrol.o      \
+          $(OBJDIR)/tsa_data.o
+	echo compiling tsa_lmparam.f90
+	( cd $(OBJDIR) && $(F90) $(COMFLG1) $(SRCDIR)/tsa_lmparam.f90 )
+#
+$(OBJDIR)/tsa_interpol.o:              $(SRCDIR)/tsa_interpol.f90             \
+          $(OBJDIR)/kind_parameters.o
+	echo compiling tsa_interpol.f90
+	( cd $(OBJDIR) && $(F90) $(COMFLG1) $(SRCDIR)/tsa_interpol.f90)
+#
+$(OBJDIR)/tsa_sfc_interface.o:         $(SRCDIR)/tsa_sfc_interface.f90        \
+          $(OBJDIR)/kind_parameters.o                                         \
+          $(OBJDIR)/data_block_fields.o      $(OBJDIR)/data_fields.o          \
+          $(OBJDIR)/data_modelconfig.o       $(OBJDIR)/data_runcontrol.o      \
+          $(OBJDIR)/sfc_terra_data.o         $(OBJDIR)/sfc_terra.o            \
+          $(OBJDIR)/sfc_terra_init.o         $(OBJDIR)/sfc_utilities.o        \
+          $(OBJDIR)/tsa_data.o
+	echo compiling tsa_sfc_interface.f90
+	( cd $(OBJDIR) && $(F90) $(COMFLG1) $(SRCDIR)/tsa_sfc_interface.f90 )
+#
+####################################################
+# Dependencies of additional modules
+####################################################
+#
+$(OBJDIR)/support_datetime.o:          $(SRCDIR)/support_datetime.f90         \
+          $(OBJDIR)/fxtr_definition.o
+	echo compiling support_datetime.f90
+	( cd $(OBJDIR) && $(F90) $(COMFLG1) $(SRCDIR)/support_datetime.f90 )
+#
+$(OBJDIR)/fxtr_definition.o:           $(SRCDIR)/fxtr_definition.f90
+	echo compiling fxtr_definition.f90
+	( cd $(OBJDIR) && $(F90) $(COMFLG1) $(SRCDIR)/fxtr_definition.f90 )
+#
+####################################################
+# Main Program
+####################################################
+#
+$(OBJDIR)/tsa_main.o:                  $(SRCDIR)/tsa_main.f90                 \
+          $(OBJDIR)/kind_parameters.o                                         \
+          $(OBJDIR)/data_block_fields.o      $(OBJDIR)/data_constants.o       \
+          $(OBJDIR)/data_fields.o            $(OBJDIR)/data_modelconfig.o     \
+          $(OBJDIR)/data_parallel.o          $(OBJDIR)/data_runcontrol.o      \
+          $(OBJDIR)/tsa_data.o               $(OBJDIR)/tsa_setup.o            \
+          $(OBJDIR)/tsa_lmparam.o
+	echo compiling tsa_main.f90
+	( cd $(OBJDIR) && $(F90) $(COMFLG1) $(SRCDIR)/tsa_main.f90 )
+#

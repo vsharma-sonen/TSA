@@ -1,0 +1,59 @@
+#########
+#  Cray XC
+#########
+#
+F90          = ftn -c -eZ -em -eI -ec -h fp1 -h fp_trap  -h noacc -h add_paren  \
+                   -O cache0                                                    \
+               $(ECCODES_INCLUDE)                                               \
+               -I /hpc/rhome/for0adm/xc/include/radiance                        \
+               -I /hpc/rhome/for0adm/xc/include/hrit_tools                      \
+               -D__COSMO__ -DGRIBAPI -DGRIBDWD -DNETCDF -DNUDGING -DRTTOV10     \
+               -DALLOC_WKARR -DRADARFWO
+#              -DSINGLEPRECISION
+#              -DCOSMOART -DTWOMOM_SB
+#              -Omsgs -Onegmsgs -riscmox                                         
+#              -I /hpc/rhome/for0adm/xc/include/radiance                        \
+#
+# loader call
+LDPAR        = ftn
+LDSEQ        =
+#
+PROGRAM      = lmparbin
+#
+#COMFLG1      = -eD -K trap=fp
+#COMFLG1      = -G0
+#COMFLG1      = -O2 -hflex_mp=intolerant
+COMFLG1      = -O2 -hflex_mp=conservative
+COMFLG2      = $(COMFLG1)
+COMFLG3      = $(COMFLG1) -O vector0
+COMFLG4      = -g
+#
+#
+# options for debugging or profiling
+#
+# options used for linking
+LDFLG        = -K trap=fp -hflex_mp=conservative
+#
+#LDFLG        = -Ktrap=ovf
+#LDFLG        = -Wl,"-M,--cref"
+#
+# Archive maintainer
+AR          = ar
+#
+# Libraries for Cray
+#LIB          = /e/uhome/uschaett/lib/lib_crayftn/libgrib1.a
+#LIB          = /e/uhome/uschaett/lib/lib_crayftn/grib_api/lib/libgrib_api_f90.a  \
+#               /e/uhome/uschaett/lib/lib_crayftn/grib_api/lib/libgrib_api.a
+#LIB          = $(GRIB_API_LIB)  -lgrib_api_f90 -lgrib_api
+LIB          = -L$(CRAY_LD_LIBRARY_PATH) -L$(LIBDWD)/lib $(ECCODES_LIB_FTN)       \
+               -L/hpc/rhome/for0adm/xc/lib                                        \
+               -L/hpc/rhome/for0adm/xc/lib/unsupported/                           \
+               -lgrib1                         -lnetcdff -lm                      \
+               -lradiance -lrttov10.2 -lhrit_tools
+#
+#              -L/hpc/rhome/software/aec/xc/1.0.0/CRAY/lib -laec                  \
+#             /e/rhome/for0adm/xc/lib/unsupported/libradiance10.2.a               \
+#             /e/rhome/for0adm/xc/lib/unsupported/librttov10.2.a
+#              /e/uhome/uschaett/opt/RTTOV7/libRTTOV7_synsat_vector.a
+#              /e/uhome/uschaett/scaling/COSMO_RAPS_5.1/libRTTOV7_dwd.a
+#              /opt/cray/ddt/4.2.2.6_39982/lib/64/libdmallocth.a

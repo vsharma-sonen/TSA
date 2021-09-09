@@ -1,0 +1,32 @@
+#########
+# gfortran 
+#########
+#
+# define NetCDF and GRIB-API installation directories
+#NCDFDIR      = /uwork1/uschaett/lib_gfortran/netcdf-4.4.1.1
+GRIBDIR      = /uwork1/uschaett/lib_gfortran/eccodes-2.12.5
+LAECDIR      = /uwork1/uschaett/lib_gfortran/aec-1.0.0
+
+# compiler call
+F90          = gfortran -cpp -c  -ffree-line-length-0 -fcheck=all                                    \
+               -I$(SRCDIR) -I$(GRIBDIR)/include                                                      \
+               -D__COSMO__ 
+#              -DSINGLEPRECISION -DVAR_PHYSICS_PREC
+
+COMFLG1      = -O2 -g
+COMFLG2      = $(COMFLG1)
+COMFLG3      = $(COMFLG1)
+COMFLG4      = -O0 -g
+#
+# linker
+LDPAR        = mpif90   -g
+LDSEQ        = gfortran
+LDFLAGS      = 
+#
+# standard binary
+PROGRAM      = tsa_exec
+#
+LIB          = /uwork1/uschaett/lib_gfortran/libgrib1.a                                 \
+               -L$(GRIBDIR)/lib      -L$(LAECDIR)/lib64                                 \
+               -leccodes_f90 -leccodes   -laec                                          \
+               -lm -lpng -ljasper

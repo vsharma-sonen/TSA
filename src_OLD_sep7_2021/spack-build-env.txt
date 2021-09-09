@@ -1,0 +1,236 @@
+ACLOCAL_PATH=/apps/arolla/UES/jenkins/RH7.7/MCH-PE20.06/generic/easybuild/software/CMake/3.14.5/share/aclocal; export ACLOCAL_PATH
+APPS=/apps/arolla; export APPS
+BASH_ENV=/cm/local/apps/environment-modules/4.0.0//init/bash; export BASH_ENV
+function _moduleraw() {  eval `/cm/local/apps/environment-modules/4.0.0//libexec/modulecmd-compat bash $*`
+}; export -f _moduleraw
+function module() {  eval `/cm/local/apps/environment-modules/4.0.0//libexec/modulecmd-compat bash $*`
+}; export -f module
+function spack() {  for var in LD_LIBRARY_PATH DYLD_LIBRARY_PATH DYLD_FALLBACK_LIBRARY_PATH;
+ do
+ eval "if [ -n \"\${${var}-}\" ]; then export SPACK_$var=\${${var}}; fi";
+ done;
+ if [ -n "${ZSH_VERSION:-}" ]; then
+ emulate -L sh;
+ fi;
+ _sp_flags="";
+ while [ ! -z ${1+x} ] && [ "${1#-}" != "${1}" ]; do
+ _sp_flags="$_sp_flags $1";
+ shift;
+ done;
+ if [ -n "$_sp_flags" ] && [ "${_sp_flags#*h}" != "${_sp_flags}" ] || [ "${_sp_flags#*V}" != "${_sp_flags}" ]; then
+ command spack $_sp_flags "$@";
+ return;
+ fi;
+ _sp_subcommand="";
+ if [ ! -z ${1+x} ]; then
+ _sp_subcommand="$1";
+ shift;
+ fi;
+ case $_sp_subcommand in 
+ "cd")
+ _sp_arg="";
+ if [ -n "$1" ]; then
+ _sp_arg="$1";
+ shift;
+ fi;
+ if [ "$_sp_arg" = "-h" ] || [ "$_sp_arg" = "--help" ]; then
+ command spack cd -h;
+ else
+ LOC="$(spack location $_sp_arg "$@")";
+ if [ -d "$LOC" ]; then
+ cd "$LOC";
+ else
+ return 1;
+ fi;
+ fi;
+ return
+ ;;
+ "env")
+ _sp_arg="";
+ if [ -n "$1" ]; then
+ _sp_arg="$1";
+ shift;
+ fi;
+ if [ "$_sp_arg" = "-h" ] || [ "$_sp_arg" = "--help" ]; then
+ command spack env -h;
+ else
+ case $_sp_arg in 
+ activate)
+ _a=" $@";
+ if [ -z ${1+x} ] || [ "${_a#* --sh}" != "$_a" ] || [ "${_a#* --csh}" != "$_a" ] || [ "${_a#* -h}" != "$_a" ] || [ "${_a#* --help}" != "$_a" ]; then
+ command spack env activate "$@";
+ else
+ eval $(command spack $_sp_flags env activate --sh "$@");
+ fi
+ ;;
+ deactivate)
+ _a=" $@";
+ if [ "${_a#* --sh}" != "$_a" ] || [ "${_a#* --csh}" != "$_a" ]; then
+ command spack env deactivate "$@";
+ else
+ if [ -n "$*" ]; then
+ command spack env deactivate -h;
+ else
+ eval $(command spack $_sp_flags env deactivate --sh);
+ fi;
+ fi
+ ;;
+ *)
+ command spack env $_sp_arg "$@"
+ ;;
+ esac;
+ fi;
+ return
+ ;;
+ "load" | "unload")
+ _a=" $@";
+ if [ "${_a#* --sh}" != "$_a" ] || [ "${_a#* --csh}" != "$_a" ] || [ "${_a#* -h}" != "$_a" ] || [ "${_a#* --help}" != "$_a" ]; then
+ command spack $_sp_flags $_sp_subcommand "$@";
+ else
+ eval $(command spack $_sp_flags $_sp_subcommand --sh "$@" ||                     echo "return 1");
+ fi
+ ;;
+ *)
+ command spack $_sp_flags $_sp_subcommand "$@"
+ ;;
+ esac
+}; export -f spack
+function switchml() {  typeset swfound=1;
+ if [ "$MODULES_USE_COMPAT_VERSION" = '1' ]; then
+ typeset swname='main';
+ if [ -e /cm/local/apps/environment-modules/4.0.0//libexec/modulecmd.tcl ]; then
+ typeset swfound=0;
+ unset MODULES_USE_COMPAT_VERSION;
+ fi;
+ else
+ typeset swname='compatibility';
+ if [ -e /cm/local/apps/environment-modules/4.0.0//libexec/modulecmd-compat ]; then
+ typeset swfound=0;
+ MODULES_USE_COMPAT_VERSION=1;
+ export MODULES_USE_COMPAT_VERSION;
+ fi;
+ fi;
+ if [ $swfound -eq 0 ]; then
+ echo "Switching to Modules $swname version";
+ source /cm/local/apps/environment-modules/4.0.0//init/bash;
+ else
+ echo "Cannot switch to Modules $swname version, command not found";
+ return 1;
+ fi
+}; export -f switchml
+CC=/project/g110/spack/user/tsa/spack/lib/spack/env/gcc/gcc; export CC
+CMAKE_LIBRARY_PATH=/apps/arolla/UES/jenkins/RH7.7/MCH-PE20.06/generic/easybuild/software/GCCcore/8.3.0/lib64; export CMAKE_LIBRARY_PATH
+CMAKE_PREFIX_PATH=/apps/arolla/UES/jenkins/RH7.7/MCH-PE20.06/generic/easybuild/software/CMake/3.14.5:/scratch/vsharma/spack-install/tsa/libaec/1.0.2/gcc/hzk4f3ppmnxrnsff3ishsb6nte6w445q:/scratch/vsharma/spack-install/tsa/eccodes/2.18.0/gcc/zldspqladldw626s4rcl4fr5ssxf6fwh:/project/g110/spack-install/tsa/libgrib1/22-01-2020/gcc/ifqlysrjqauhhfn64m3q45bikdrnhitp; export CMAKE_PREFIX_PATH
+CPATH=/apps/arolla/UES/jenkins/RH7.7/MCH-PE20.06/generic/easybuild/software/binutils/2.32-GCCcore-8.3.0/include:/apps/arolla/UES/jenkins/RH7.7/MCH-PE20.06/generic/easybuild/software/zlib/1.2.11-GCCcore-8.3.0/include; export CPATH
+CXX=/project/g110/spack/user/tsa/spack/lib/spack/env/gcc/g++; export CXX
+DICTIONARIES=/users/tsm/project_rh7.7/fieldextra/develop/resources/; export DICTIONARIES
+EBDEVELBINUTILS=/apps/arolla/UES/jenkins/RH7.7/MCH-PE20.06/generic/easybuild/software/binutils/2.32-GCCcore-8.3.0/easybuild/binutils-.2.32-gcccore-8.3.0-easybuild-devel; export EBDEVELBINUTILS
+EBDEVELBZIP2=/apps/arolla/UES/jenkins/RH7.7/MCH-PE20.06/generic/easybuild/software/bzip2/1.0.8/easybuild/bzip2-.1.0.8-easybuild-devel; export EBDEVELBZIP2
+EBDEVELCMAKE=/apps/arolla/UES/jenkins/RH7.7/MCH-PE20.06/generic/easybuild/software/CMake/3.14.5/easybuild/cmake-3.14.5-easybuild-devel; export EBDEVELCMAKE
+EBDEVELGCC=/apps/arolla/UES/jenkins/RH7.7/MCH-PE20.06/generic/easybuild/software/GCC/8.3.0/easybuild/gcc-8.3.0-easybuild-devel; export EBDEVELGCC
+EBDEVELGCCCORE=/apps/arolla/UES/jenkins/RH7.7/MCH-PE20.06/generic/easybuild/software/GCCcore/8.3.0/easybuild/gcccore-.8.3.0-easybuild-devel; export EBDEVELGCCCORE
+EBDEVELLIBREADLINE=/apps/arolla/UES/jenkins/RH7.7/MCH-PE20.06/generic/easybuild/software/libreadline/8.0/easybuild/libreadline-.8.0-easybuild-devel; export EBDEVELLIBREADLINE
+EBDEVELNCURSES=/apps/arolla/UES/jenkins/RH7.7/MCH-PE20.06/generic/easybuild/software/ncurses/6.1/easybuild/ncurses-.6.1-easybuild-devel; export EBDEVELNCURSES
+EBDEVELPYTHON=/apps/arolla/UES/jenkins/RH7.7/MCH-PE20.06/generic/easybuild/software/Python/3.7.4/easybuild/python-3.7.4-easybuild-devel; export EBDEVELPYTHON
+EBDEVELZLIB=/apps/arolla/UES/jenkins/RH7.7/MCH-PE20.06/generic/easybuild/software/zlib/1.2.11-GCCcore-8.3.0/easybuild/zlib-.1.2.11-gcccore-8.3.0-easybuild-devel; export EBDEVELZLIB
+EBEXTSLISTPYTHON=setuptools-41.0.1,pip-19.1.1,nose-1.3.7,Cython-0.29.12,six-1.12.0,virtualenv-16.6.0; export EBEXTSLISTPYTHON
+EBROOTBINUTILS=/apps/arolla/UES/jenkins/RH7.7/MCH-PE20.06/generic/easybuild/software/binutils/2.32-GCCcore-8.3.0; export EBROOTBINUTILS
+EBROOTBZIP2=/apps/arolla/UES/jenkins/RH7.7/MCH-PE20.06/generic/easybuild/software/bzip2/1.0.8; export EBROOTBZIP2
+EBROOTCMAKE=/apps/arolla/UES/jenkins/RH7.7/MCH-PE20.06/generic/easybuild/software/CMake/3.14.5; export EBROOTCMAKE
+EBROOTGCC=/apps/arolla/UES/jenkins/RH7.7/MCH-PE20.06/generic/easybuild/software/GCCcore/8.3.0; export EBROOTGCC
+EBROOTGCCCORE=/apps/arolla/UES/jenkins/RH7.7/MCH-PE20.06/generic/easybuild/software/GCCcore/8.3.0; export EBROOTGCCCORE
+EBROOTLIBREADLINE=/apps/arolla/UES/jenkins/RH7.7/MCH-PE20.06/generic/easybuild/software/libreadline/8.0; export EBROOTLIBREADLINE
+EBROOTNCURSES=/apps/arolla/UES/jenkins/RH7.7/MCH-PE20.06/generic/easybuild/software/ncurses/6.1; export EBROOTNCURSES
+EBROOTPYTHON=/apps/arolla/UES/jenkins/RH7.7/MCH-PE20.06/generic/easybuild/software/Python/3.7.4; export EBROOTPYTHON
+EBROOTZLIB=/apps/arolla/UES/jenkins/RH7.7/MCH-PE20.06/generic/easybuild/software/zlib/1.2.11-GCCcore-8.3.0; export EBROOTZLIB
+EBVERSIONBINUTILS=2.32; export EBVERSIONBINUTILS
+EBVERSIONBZIP2=1.0.8; export EBVERSIONBZIP2
+EBVERSIONCMAKE=3.14.5; export EBVERSIONCMAKE
+EBVERSIONGCC=8.3.0; export EBVERSIONGCC
+EBVERSIONGCCCORE=8.3.0; export EBVERSIONGCCCORE
+EBVERSIONLIBREADLINE=8.0; export EBVERSIONLIBREADLINE
+EBVERSIONNCURSES=6.1; export EBVERSIONNCURSES
+EBVERSIONPYTHON=3.7.4; export EBVERSIONPYTHON
+EBVERSIONZLIB=1.2.11; export EBVERSIONZLIB
+ENABLE_LMOD=0; export ENABLE_LMOD
+ENV=/cm/local/apps/environment-modules/4.0.0//init/profile.sh; export ENV
+F77=/project/g110/spack/user/tsa/spack/lib/spack/env/gcc/gfortran; export F77
+FC=/project/g110/spack/user/tsa/spack/lib/spack/env/gcc/gfortran; export FC
+GRIB2_SAMPLE=/users/tsm/project_rh7.7/fieldextra/develop/resources/eccodes_samples/COSMO_GRIB2_default.tmpl; export GRIB2_SAMPLE
+GRIB_DEFINITION_PATH=/users/tsm/project_rh7.7/fieldextra/develop/resources/eccodes_definitions_cosmo:/users/tsm/project_rh7.7/fieldextra/develop/resources/eccodes_definitions_vendor; export GRIB_DEFINITION_PATH
+HISTCONTROL=ignoredups; export HISTCONTROL
+HISTSIZE=''; export HISTSIZE
+HOME=/users/vsharma; export HOME
+HOST=tsa-ln003; export HOST
+HOSTNAME=tsa-ln003; export HOSTNAME
+KDEDIRS=/usr; export KDEDIRS
+LANG=en_US.UTF-8; export LANG
+LC_ADDRESS=de_CH.UTF-8; export LC_ADDRESS
+LC_ALL=C; export LC_ALL
+LC_IDENTIFICATION=de_CH.UTF-8; export LC_IDENTIFICATION
+LC_MEASUREMENT=de_CH.UTF-8; export LC_MEASUREMENT
+LC_MONETARY=de_CH.UTF-8; export LC_MONETARY
+LC_NAME=de_CH.UTF-8; export LC_NAME
+LC_NUMERIC=de_CH.UTF-8; export LC_NUMERIC
+LC_PAPER=de_CH.UTF-8; export LC_PAPER
+LC_TELEPHONE=de_CH.UTF-8; export LC_TELEPHONE
+LC_TIME=de_CH.UTF-8; export LC_TIME
+LD_LIBRARY_PATH=/apps/arolla/UES/jenkins/RH7.7/MCH-PE20.06/generic/easybuild/software/binutils/2.32-GCCcore-8.3.0/lib:/apps/arolla/UES/jenkins/RH7.7/MCH-PE20.06/generic/easybuild/software/zlib/1.2.11-GCCcore-8.3.0/lib:/apps/arolla/UES/jenkins/RH7.7/MCH-PE20.06/generic/easybuild/software/GCCcore/8.3.0/lib64:/apps/arolla/UES/jenkins/RH7.7/MCH-PE20.06/generic/easybuild/software/GCCcore/8.3.0/lib; export LD_LIBRARY_PATH
+LD_LIBRARY_PATH_modshare=/opt/slurm/20.02.5/lib64/:1; export LD_LIBRARY_PATH_modshare
+LESSOPEN='||/usr/bin/lesspipe.sh %s'; export LESSOPEN
+LIBRARY_PATH=/apps/arolla/UES/jenkins/RH7.7/MCH-PE20.06/generic/easybuild/software/binutils/2.32-GCCcore-8.3.0/lib:/apps/arolla/UES/jenkins/RH7.7/MCH-PE20.06/generic/easybuild/software/zlib/1.2.11-GCCcore-8.3.0/lib; export LIBRARY_PATH
+LOADEDMODULES=slurm/20.02.5:bzip2/.1.0.8:ncurses/.6.1:libreadline/.8.0:python/3.7.4:gcccore/.8.3.0:zlib/.1.2.11-gcccore-8.3.0:binutils/.2.32-gcccore-8.3.0:gcc/8.3.0:cmake/3.14.5; export LOADEDMODULES
+LOADEDMODULES_modshare=slurm/20.02.5:1; export LOADEDMODULES_modshare
+LOGNAME=vsharma; export LOGNAME
+LS_COLORS='rs=0:di=01;34:ln=01;36:mh=00:pi=40;33:so=01;35:do=01;35:bd=40;33;01:cd=40;33;01:or=40;31;01:su=37;41:sg=30;43:ca=30;41:tw=30;42:ow=34;42:st=37;44:ex=01;32:*.tar=01;31:*.tgz=01;31:*.arc=01;31:*.arj=01;31:*.taz=01;31:*.lha=01;31:*.lz4=01;31:*.lzh=01;31:*.lzma=01;31:*.tlz=01;31:*.txz=01;31:*.tzo=01;31:*.t7z=01;31:*.zip=01;31:*.z=01;31:*.Z=01;31:*.dz=01;31:*.gz=01;31:*.lrz=01;31:*.lz=01;31:*.lzo=01;31:*.xz=01;31:*.bz2=01;31:*.bz=01;31:*.tbz=01;31:*.tbz2=01;31:*.tz=01;31:*.deb=01;31:*.rpm=01;31:*.jar=01;31:*.war=01;31:*.ear=01;31:*.sar=01;31:*.rar=01;31:*.alz=01;31:*.ace=01;31:*.zoo=01;31:*.cpio=01;31:*.7z=01;31:*.rz=01;31:*.cab=01;31:*.jpg=01;35:*.jpeg=01;35:*.gif=01;35:*.bmp=01;35:*.pbm=01;35:*.pgm=01;35:*.ppm=01;35:*.tga=01;35:*.xbm=01;35:*.xpm=01;35:*.tif=01;35:*.tiff=01;35:*.png=01;35:*.svg=01;35:*.svgz=01;35:*.mng=01;35:*.pcx=01;35:*.mov=01;35:*.mpg=01;35:*.mpeg=01;35:*.m2v=01;35:*.mkv=01;35:*.webm=01;35:*.ogm=01;35:*.mp4=01;35:*.m4v=01;35:*.mp4v=01;35:*.vob=01;35:*.qt=01;35:*.nuv=01;35:*.wmv=01;35:*.asf=01;35:*.rm=01;35:*.rmvb=01;35:*.flc=01;35:*.avi=01;35:*.fli=01;35:*.flv=01;35:*.gl=01;35:*.dl=01;35:*.xcf=01;35:*.xwd=01;35:*.yuv=01;35:*.cgm=01;35:*.emf=01;35:*.axv=01;35:*.anx=01;35:*.ogv=01;35:*.ogx=01;35:*.aac=00;36:*.au=00;36:*.flac=00;36:*.mid=00;36:*.midi=00;36:*.mka=00;36:*.mp3=00;36:*.mpc=00;36:*.ogg=00;36:*.ra=00;36:*.wav=00;36:*.axa=00;36:*.oga=00;36:*.spx=00;36:*.xspf=00;36:'; export LS_COLORS
+MAIL=/var/spool/mail/vsharma; export MAIL
+MANPATH=/apps/arolla/UES/jenkins/RH7.7/MCH-PE20.06/generic/easybuild/software/binutils/2.32-GCCcore-8.3.0/share/man:/apps/arolla/UES/jenkins/RH7.7/MCH-PE20.06/generic/easybuild/software/zlib/1.2.11-GCCcore-8.3.0/share/man:/apps/arolla/UES/jenkins/RH7.7/MCH-PE20.06/generic/easybuild/software/GCCcore/8.3.0/share/man:/apps/arolla/UES/jenkins/RH7.7/MCH-PE20.06/generic/easybuild/software/Python/3.7.4/share/man:/apps/arolla/UES/jenkins/RH7.7/MCH-PE20.06/generic/easybuild/software/libreadline/8.0/share/man:/apps/arolla/UES/jenkins/RH7.7/MCH-PE20.06/generic/easybuild/software/ncurses/6.1/share/man:/apps/arolla/UES/jenkins/RH7.7/MCH-PE20.06/generic/easybuild/software/bzip2/1.0.8/man:/opt/slurm/20.02.5/share/man:/cm/local/apps/environment-modules/4.0.0//share/man:/usr/local/share/man:/usr/share/man/overrides:/usr/share/man:/cm/local/apps/environment-modules/4.0.0/share/man:/opt/ibutils/share/man:/cm/local/apps/environment-modules/current/share/man; export MANPATH
+MANPATH_modshare=/usr/local/share/man:1:/usr/share/man/overrides:1:/opt/slurm/20.02.5/share/man:1:/cm/local/apps/environment-modules/4.0.0//share/man:1:/cm/local/apps/environment-modules/current/share/man:1:/usr/share/man:1:/cm/local/apps/environment-modules/4.0.0/share/man:1:/opt/ibutils/share/man:1; export MANPATH_modshare
+MODULEPATH=/scratch/vsharma/modules/tsa/linux-rhel7-skylake_avx512:/cm/local/modulefiles:/cm/shared/modulefiles:/apps/arolla/UES/jenkins/RH7.7/MCH-PE20.06/generic/easybuild/modules/all:/apps/tsa/UES/reframe:/cm/local/modulefiles:/cm/shared/modulefiles:/apps/arolla/system/modulefiles; export MODULEPATH
+MODULESHOME=/cm/local/apps/environment-modules/4.0.0/; export MODULESHOME
+MODULES_USE_COMPAT_VERSION=1; export MODULES_USE_COMPAT_VERSION
+OMP_STACKSIZE=500M; export OMP_STACKSIZE
+PATH=/project/g110/spack/user/tsa/spack/lib/spack/env/gcc:/project/g110/spack/user/tsa/spack/lib/spack/env/case-insensitive:/project/g110/spack/user/tsa/spack/lib/spack/env:/scratch/vsharma/spack-install/tsa/eccodes/2.18.0/gcc/zldspqladldw626s4rcl4fr5ssxf6fwh/bin:/scratch/vsharma/spack-install/tsa/libaec/1.0.2/gcc/hzk4f3ppmnxrnsff3ishsb6nte6w445q/bin:/scratch/vsharma/spack-install/tsa/eccodes/2.18.0/gcc/zldspqladldw626s4rcl4fr5ssxf6fwh/bin:/scratch/vsharma/spack-install/tsa/libaec/1.0.2/gcc/hzk4f3ppmnxrnsff3ishsb6nte6w445q/bin:/apps/arolla/UES/jenkins/RH7.7/MCH-PE20.06/generic/easybuild/software/CMake/3.14.5/bin:/apps/arolla/UES/jenkins/RH7.7/MCH-PE20.06/generic/easybuild/software/binutils/2.32-GCCcore-8.3.0/bin:/apps/arolla/UES/jenkins/RH7.7/MCH-PE20.06/generic/easybuild/software/GCCcore/8.3.0/bin:/project/g110/spack/user/tsa/spack/bin:/apps/arolla/UES/jenkins/RH7.7/MCH-PE20.06/generic/easybuild/software/Python/3.7.4/bin:/apps/arolla/UES/jenkins/RH7.7/MCH-PE20.06/generic/easybuild/software/ncurses/6.1/bin:/apps/arolla/UES/jenkins/RH7.7/MCH-PE20.06/generic/easybuild/software/bzip2/1.0.8/bin:/users/tsm/project_rh7.7/fieldextra/develop/tools:/users/tsm/project_rh7.7/fieldextra/develop/bin:/opt/slurm/20.02.5/sbin:/opt/slurm/20.02.5/bin:/cm/local/apps/environment-modules/4.0.0//bin:/usr/local/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/sbin:/usr/sbin:/cm/local/apps/environment-modules/4.0.0/bin:/opt/ibutils/bin:/usr/lpp/mmfs/bin:/usr/local/exelis/idl/bin:/users/vsharma/.local/bin:/users/vsharma/bin; export PATH
+PATH_modshare=/usr/bin:1:/usr/local/bin:1:/opt/ibutils/bin:1:/cm/local/apps/environment-modules/4.0.0/bin:1:/opt/slurm/20.02.5/bin:1:/sbin:1:/opt/slurm/20.02.5/sbin:1:/usr/local/exelis/idl/bin:1:/usr/sbin:1:/cm/local/apps/environment-modules/4.0.0//bin:1:/usr/lpp/mmfs/bin:1:/usr/local/sbin:1; export PATH_modshare
+PKG_CONFIG_PATH=/scratch/vsharma/spack-install/tsa/eccodes/2.18.0/gcc/zldspqladldw626s4rcl4fr5ssxf6fwh/lib/pkgconfig:/apps/arolla/UES/jenkins/RH7.7/MCH-PE20.06/generic/easybuild/software/zlib/1.2.11-GCCcore-8.3.0/lib/pkgconfig:/apps/arolla/UES/jenkins/RH7.7/MCH-PE20.06/generic/easybuild/software/Python/3.7.4/lib/pkgconfig:/apps/arolla/UES/jenkins/RH7.7/MCH-PE20.06/generic/easybuild/software/libreadline/8.0/lib/pkgconfig:/apps/arolla/UES/jenkins/RH7.7/MCH-PE20.06/generic/easybuild/software/bzip2/1.0.8/lib/pkgconfig; export PKG_CONFIG_PATH
+#PWD=/scratch/vsharma/TERRA/terra-standalone/src; export PWD
+PYTHONPATH=/apps/arolla/UES/jenkins/RH7.7/MCH-PE20.06/generic/easybuild/software/Python/3.7.4/easybuild/python; export PYTHONPATH
+QT_GRAPHICSSYSTEM_CHECKED=1; export QT_GRAPHICSSYSTEM_CHECKED
+QT_PLUGIN_PATH=/usr/lib64/kde4/plugins:/usr/lib/kde4/plugins; export QT_PLUGIN_PATH
+SCRATCH=/scratch/vsharma; export SCRATCH
+SHELL=/usr/local/bin/bash; export SHELL
+SHLVL=8; export SHLVL
+SPACK_CC=/apps/arolla/UES/jenkins/RH7.7/generic/easybuild/software/GCCcore/8.3.0/bin/gcc; export SPACK_CC
+SPACK_CC_RPATH_ARG=-Wl,-rpath,; export SPACK_CC_RPATH_ARG
+SPACK_COMPILER_IMPLICIT_RPATHS=/apps/arolla/UES/jenkins/RH7.7/generic/easybuild/software/GCCcore/8.3.0/lib/gcc/x86_64-pc-linux-gnu/8.3.0:/apps/arolla/UES/jenkins/RH7.7/generic/easybuild/software/GCCcore/8.3.0/lib64; export SPACK_COMPILER_IMPLICIT_RPATHS
+SPACK_COMPILER_SPEC=gcc@8.3.0; export SPACK_COMPILER_SPEC
+SPACK_CXX=/apps/arolla/UES/jenkins/RH7.7/generic/easybuild/software/GCCcore/8.3.0/bin/g++; export SPACK_CXX
+SPACK_CXX_RPATH_ARG=-Wl,-rpath,; export SPACK_CXX_RPATH_ARG
+SPACK_DEBUG_LOG_DIR=/scratch-shared/meteoswiss/scratch/vsharma/TERRA/terra-standalone/src; export SPACK_DEBUG_LOG_DIR
+SPACK_DEBUG_LOG_ID=terra-standalone-c2qnw3k; export SPACK_DEBUG_LOG_ID
+SPACK_DTAGS_TO_ADD=--disable-new-dtags; export SPACK_DTAGS_TO_ADD
+SPACK_DTAGS_TO_STRIP=--enable-new-dtags; export SPACK_DTAGS_TO_STRIP
+SPACK_ENV_PATH=/project/g110/spack/user/tsa/spack/lib/spack/env:/project/g110/spack/user/tsa/spack/lib/spack/env/case-insensitive:/project/g110/spack/user/tsa/spack/lib/spack/env/gcc; export SPACK_ENV_PATH
+SPACK_F77=/apps/arolla/UES/jenkins/RH7.7/generic/easybuild/software/GCCcore/8.3.0/bin/gfortran; export SPACK_F77
+SPACK_F77_RPATH_ARG=-Wl,-rpath,; export SPACK_F77_RPATH_ARG
+SPACK_FC=/apps/arolla/UES/jenkins/RH7.7/generic/easybuild/software/GCCcore/8.3.0/bin/gfortran; export SPACK_FC
+SPACK_FC_RPATH_ARG=-Wl,-rpath,; export SPACK_FC_RPATH_ARG
+SPACK_INCLUDE_DIRS=/scratch/vsharma/spack-install/tsa/libaec/1.0.2/gcc/hzk4f3ppmnxrnsff3ishsb6nte6w445q/include:/scratch/vsharma/spack-install/tsa/eccodes/2.18.0/gcc/zldspqladldw626s4rcl4fr5ssxf6fwh/include; export SPACK_INCLUDE_DIRS
+SPACK_LD_LIBRARY_PATH=/apps/arolla/UES/jenkins/RH7.7/MCH-PE20.06/generic/easybuild/software/Python/3.7.4/lib:/apps/arolla/UES/jenkins/RH7.7/MCH-PE20.06/generic/easybuild/software/libreadline/8.0/lib:/apps/arolla/UES/jenkins/RH7.7/MCH-PE20.06/generic/easybuild/software/ncurses/6.1/lib:/apps/arolla/UES/jenkins/RH7.7/MCH-PE20.06/generic/easybuild/software/bzip2/1.0.8/lib:/opt/slurm/20.02.5/lib64/; export SPACK_LD_LIBRARY_PATH
+SPACK_LINKER_ARG=-Wl,; export SPACK_LINKER_ARG
+SPACK_LINK_DIRS=/project/g110/spack-install/tsa/libgrib1/22-01-2020/gcc/ifqlysrjqauhhfn64m3q45bikdrnhitp/lib:/scratch/vsharma/spack-install/tsa/libaec/1.0.2/gcc/hzk4f3ppmnxrnsff3ishsb6nte6w445q/lib64:/scratch/vsharma/spack-install/tsa/eccodes/2.18.0/gcc/zldspqladldw626s4rcl4fr5ssxf6fwh/lib; export SPACK_LINK_DIRS
+SPACK_NEW_LD_LIBRARY_PATH=/apps/arolla/UES/jenkins/RH7.7/MCH-PE20.06/generic/easybuild/software/binutils/2.32-GCCcore-8.3.0/lib:/apps/arolla/UES/jenkins/RH7.7/MCH-PE20.06/generic/easybuild/software/zlib/1.2.11-GCCcore-8.3.0/lib:/apps/arolla/UES/jenkins/RH7.7/MCH-PE20.06/generic/easybuild/software/GCCcore/8.3.0/lib64:/apps/arolla/UES/jenkins/RH7.7/MCH-PE20.06/generic/easybuild/software/GCCcore/8.3.0/lib; export SPACK_NEW_LD_LIBRARY_PATH
+SPACK_ROOT=/project/g110/spack/user/tsa/spack; export SPACK_ROOT
+SPACK_RPATH_DIRS=/scratch/vsharma/spack-install/tsa/terra-standalone/master/gcc/c2qnw3kk4etrq5eo7bvwzx24wgye6uu4/lib:/scratch/vsharma/spack-install/tsa/terra-standalone/master/gcc/c2qnw3kk4etrq5eo7bvwzx24wgye6uu4/lib64:/project/g110/spack-install/tsa/libgrib1/22-01-2020/gcc/ifqlysrjqauhhfn64m3q45bikdrnhitp/lib:/scratch/vsharma/spack-install/tsa/libaec/1.0.2/gcc/hzk4f3ppmnxrnsff3ishsb6nte6w445q/lib64:/scratch/vsharma/spack-install/tsa/eccodes/2.18.0/gcc/zldspqladldw626s4rcl4fr5ssxf6fwh/lib; export SPACK_RPATH_DIRS
+SPACK_SHORT_SPEC='terra-standalone@master%gcc@8.3.0 arch=linux-rhel7-skylake_avx512/c2qnw3k'; export SPACK_SHORT_SPEC
+SPACK_SYSTEM_DIRS=/bin:/usr/bin:/usr/local/bin:/bin64:/usr/bin64:/usr/local/bin64:/include:/usr/include:/usr/local/include:/lib:/usr/lib:/usr/local/lib:/lib64:/usr/lib64:/usr/local/lib64:/:/usr:/usr/local; export SPACK_SYSTEM_DIRS
+SPACK_TARGET_ARGS='-march=skylake-avx512 -mtune=skylake-avx512'; export SPACK_TARGET_ARGS
+SSH_CLIENT='148.187.1.8 39350 22'; export SSH_CLIENT
+SSH_CONNECTION='148.187.1.8 39350 148.187.21.105 22'; export SSH_CONNECTION
+SSH_TTY=/dev/pts/5; export SSH_TTY
+TERM=xterm-256color; export TERM
+USER=vsharma; export USER
+XDG_DATA_DIRS=/apps/arolla/UES/jenkins/RH7.7/MCH-PE20.06/generic/easybuild/software/CMake/3.14.5/share:/apps/arolla/UES/jenkins/RH7.7/MCH-PE20.06/generic/easybuild/software/binutils/2.32-GCCcore-8.3.0/share:/apps/arolla/UES/jenkins/RH7.7/MCH-PE20.06/generic/easybuild/software/zlib/1.2.11-GCCcore-8.3.0/share:/apps/arolla/UES/jenkins/RH7.7/MCH-PE20.06/generic/easybuild/software/GCCcore/8.3.0/share:/apps/arolla/UES/jenkins/RH7.7/MCH-PE20.06/generic/easybuild/software/Python/3.7.4/share:/apps/arolla/UES/jenkins/RH7.7/MCH-PE20.06/generic/easybuild/software/libreadline/8.0/share:/apps/arolla/UES/jenkins/RH7.7/MCH-PE20.06/generic/easybuild/software/ncurses/6.1/share:/users/vsharma/.local/share/flatpak/exports/share:/var/lib/flatpak/exports/share:/usr/local/share:/usr/share; export XDG_DATA_DIRS
+_=/apps/arolla/UES/jenkins/RH7.7/MCH-PE20.06/generic/easybuild/software/Python/3.7.4/bin/python3; export _
+_LMFILES_=/cm/local/modulefiles/slurm/20.02.5:/apps/arolla/UES/jenkins/RH7.7/MCH-PE20.06/generic/easybuild/modules/all/bzip2/.1.0.8:/apps/arolla/UES/jenkins/RH7.7/MCH-PE20.06/generic/easybuild/modules/all/ncurses/.6.1:/apps/arolla/UES/jenkins/RH7.7/MCH-PE20.06/generic/easybuild/modules/all/libreadline/.8.0:/apps/arolla/UES/jenkins/RH7.7/MCH-PE20.06/generic/easybuild/modules/all/python/3.7.4:/apps/arolla/UES/jenkins/RH7.7/MCH-PE20.06/generic/easybuild/modules/all/gcccore/.8.3.0:/apps/arolla/UES/jenkins/RH7.7/MCH-PE20.06/generic/easybuild/modules/all/zlib/.1.2.11-gcccore-8.3.0:/apps/arolla/UES/jenkins/RH7.7/MCH-PE20.06/generic/easybuild/modules/all/binutils/.2.32-gcccore-8.3.0:/apps/arolla/UES/jenkins/RH7.7/MCH-PE20.06/generic/easybuild/modules/all/gcc/8.3.0:/apps/arolla/UES/jenkins/RH7.7/MCH-PE20.06/generic/easybuild/modules/all/cmake/3.14.5; export _LMFILES_
+_LMFILES__modshare=/cm/local/modulefiles/slurm/20.02.5:1; export _LMFILES__modshare

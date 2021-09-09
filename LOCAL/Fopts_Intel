@@ -1,0 +1,30 @@
+#########
+#  Intel
+#########
+#
+F90          = mpiifort -c  -fpp                                                 \
+               $(GRIB_API_INCLUDE)                                               \
+               -I /e/uhome/uschaett/rttov/RTTOV10/radiance10.2/obj               \
+               -I /usr/local/pkg/netcdf/4.3.0/include                            \
+               -DGRIBDWD -DGRIBAPI -DNETCDF -DNUDGING -DRTTOV10 -D__COSMO__
+#
+# F90          = gfortran -c  -x f95-cpp-input
+#  -x f95-cpp-input:   apply C-preprocessor to every file (not only .F90)
+# LDSEQ        = gfortran
+#
+COMFLG1      = -O2
+COMFLG2      = -O2
+COMFLG3      = -O2
+COMFLG4      = -O2
+#
+# linker
+LDPAR        = mpiifort  -static
+LDSEQ        = mpif90 -static
+#
+# standard binary
+PROGRAM      = lmparbin
+#
+LIB          = -L$(LD_LIBRARY_PATH) -L$(LIBDWD)/lib $(GRIB_API_LIB)         \
+               -lgrib1 -lgrib_api_f90 -lgrib_api -lnetcdff -lm                   \
+               /e/rhome/for0adm/lc/lib/unsupported/libradiance10.2.a             \
+               /e/rhome/for0adm/lc/lib/unsupported/librttov10.2.a

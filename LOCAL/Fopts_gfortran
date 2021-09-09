@@ -1,0 +1,60 @@
+#########
+# gfortran 
+#########
+#
+# define NetCDF and GRIB-API installation directories
+NCDFDIR      = /uwork1/uschaett/lib_gfortran/netcdf-4.4.1
+GRIBDIR      = /uwork1/uschaett/lib_gfortran/eccodes-2.8.0
+#GRIBDIR      = /uwork1/uschaett/lib_gfortran/grib_api-1.20.0
+LAECDIR      = /uwork1/uschaett/lib_gfortran/aec-1.0.0
+RTOVDIR      = /uwork1/uschaett/lib_gfortran/RTTOV10
+#
+# some possible compiler options
+#-fcheck=all <all|array-temps|bounds|do|mem|pointer|recursion>
+#-finit-integer=n
+#-finit-real=nan
+#-finit-logical=<true|false>
+#-fno-range-check 
+#-fcheck=all -Wall -Wconversion  -pedantic -std=f2008                                  
+#
+F90          = mpif90   -cpp -c  -ffree-line-length-0                                                \
+               -fstack-protector-all -finit-real=nan -finit-integer=-2147483648 -finit-character=127 \
+               -ffpe-trap=invalid,zero,overflow          -fbacktrace  -fdump-core                    \
+               -I$(SRCDIR) -I$(NCDFDIR)/include  -I$(GRIBDIR)/include -I$(RTOVDIR)/include           \
+	       -D__COSMO__ -DGRIBDWD -DGRIBAPI -DNETCDF -DNUDGING -DRTTOV10 -DALLOC_WKARR
+#              -DSINGLEPRECISION
+#              -D__COSMO__ -DGRIBDWD -DGRIBAPI -DNETCDF -DNUDGING -DRTTOV10
+#              -DCOSMOART -DPOLLEN
+#
+#  -x f95-cpp-input:   apply C-preprocessor to every file (not only .F90)
+#
+COMFLG1      = -O2 -g
+COMFLG2      = $(COMFLG1)
+COMFLG3      = $(COMFLG1)
+COMFLG4      = -O0 -g
+#
+# linker
+LDPAR        = mpif90   -g
+LDSEQ        = gfortran
+#
+# standard binary
+PROGRAM      = lmparbin
+#
+LIB          = /uwork1/uschaett/lib_gfortran/libgrib1.a                                 \
+               -L$(GRIBDIR)/lib      -L$(NCDFDIR)/lib64   -L$(LAECDIR)/lib              \
+               -leccodes_f90 -leccodes   -laec    -lnetcdff  -lnetcdf                   \
+               -lm -lpng -ljasper                                                       \
+               -L$(RTOVDIR)/lib  -lradiance10.2 -lhrit -lrttov10.2
+
+#              -lgrib_api_f90 -lgrib_api           -lnetcdff  -lnetcdf                   \
+#              -leccodes_f90 -leccodes   -laec    -lnetcdff  -lnetcdf                   \
+#
+#              /uwork1/uschaett/lib_gfortran/RTTOV7/sp/lib/libRTTOV7_synsat_vector_sp.a
+#              /uwork1/uschaett/lib_gfortran/RTTOV7/dp/lib/libRTTOV7_synsat_vector_dp.a
+#
+#              /uwork1/uschaett/lib_gfortran/RTTOV10/lib/libradiance10.2.a            \
+#              /uwork1/uschaett/lib_gfortran/RTTOV10/lib/librttov10.2.a
+#
+#              /home/uschaett/RTTOV/RTTOV9/ifc_for_RTTOV9/librttov9_ifc.a \
+#              /home/uschaett/RTTOV/RTTOV9/rttov9_cosmo/rttov9.3-linux_gfortran/lib/librttov9.3.a  \
+#              /home/uschaett/RTTOV/RTTOV9/rttov9_cosmo/rttov9.3-linux_gfortran/lib/librttov9.3_parallel.a  \

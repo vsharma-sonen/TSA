@@ -1,0 +1,66 @@
+#########
+#  Portland Group
+#########
+#
+# define NetCDF and GRIB-API installation directories
+NCDFDIR      = /uwork1/uschaett/lib_pgi/netcdf-4.4.1
+HCDFDIR      = /uwork1/uschaett/lib_pgi/hdf5-1.10.1
+GRIBDIR      = /uwork1/uschaett/lib_pgi/grib_api-1.20.0
+###RTOVDIR      = /uwork1/uschaett/lib_pgi/RTTOV10
+#
+#F90          = pgf90                                                          -c    
+F90          = /uwork1/uschaett/opt/openmpi_pgi/bin/mpif90 -c                       \
+               -Mpreprocess              -traceback -Ktrap=fp -Kieee                \
+               -Mnoopenmp                                                           \
+               -Mfree  -Mdclchk  -Minform=warn                                      \
+               -Minline=coe_th_gpu,coe_so_gpu,cu_cond,nwp_con_gust                  \
+               -Minline=zsf_heav,watrdiff_rt,zsf_psat_iw,watrcon_rt,zsf_qsat,zsf_dqvdt_iw        \
+               -I$(SRCDIR) -I$(NCDFDIR)/include  -I$(GRIBDIR)/include -I$(RTOVDIR)/include       \
+               -D__PGI_FORTRAN__ -DHAS_IOMSG -DPGI_PTR_PB -DPGI_FIX                 \
+               -D__COSMO__ -DGRIBDWD -DGRIBAPI -DNUDGING -DNETCDF -DOPENACC -DALLOC_WKARR
+#
+#              -Munixlogical
+#              -DASSIM_WKARR_CLEANUP -DASSIM_MDARR_CLEANUP 
+#              -D_LOC_TIMING -DGSP_FIRST -DDEBUG -DCPP_DYCORE -DGCL_COMM 
+#              -v -Minform=inform -Minfo=all -Mneginfo=all 
+#              -O0 -g -C -Mchkfpstk -Mchkptr -Mdepchk -Mchkstk -Meh_frame
+#
+#              -Mnoinline                                                           \
+#              -Mfree  -Mdclchk  -Minform=warn -Munixlogical                        \
+#              -acc=verystrict -ta=tesla:cc20 -Minfo=accel                          \
+#
+#              -traceback -Ktrap=fp -Kieee                                          \
+#              -mp=nonuma -Mmpi=mpich -Mpreprocess -Mprof=lines                     \
+#  -Minfo=all
+#
+COMFLG1      = -fast -O3 -Mvect=noassoc
+COMFLG2      = -fast -O3 -Mvect=noassoc
+COMFLG3      = -fast -O3 -Mvect=noassoc
+COMFLG4      = -O0
+#COMFLG1      = -g -O0 -C -Mchkfpstk -Mchkptr -Mdepchk -Mchkstk -Meh_frame -pg #-Mvect=noassoc
+#COMFLG2      = -g -O0 -C -Mchkfpstk -Mchkptr -Mdepchk -Mchkstk -Meh_frame -pg #-Mvect=noassoc
+#COMFLG3      = -g -O0 -C -Mchkfpstk -Mchkptr -Mdepchk -Mchkstk -Meh_frame -pg #-Mvect=noassoc
+#COMFLG4      = -g -O0 -C -Mchkfpstk -Mchkptr -Mdepchk -Mchkstk -Meh_frame -pg #-Mvect=noassoc
+#
+# linker
+LDPAR        = /uwork1/uschaett/opt/openmpi_pgi/bin/mpif90                          \
+               -mp=nonuma -g -pg -traceback -Ktrap=fp
+LDSEQ        = pgf90
+LDFLG        = 
+#
+# standard binary
+PROGRAM      = lmparbin
+#
+LIB          = /uwork1/uschaett/lib_pgi/libgrib1.a                                  \
+               -L$(GRIBDIR)/lib64    -L$(NCDFDIR)/lib64   -L$(HCDFDIR)/lib64        \
+               -lgrib_api_f90 -lgrib_api -lnetcdff  -lnetcdf                        \
+                -lnetcdff -lnetcdf -lnetcdf                                         \
+                -lnetcdff -lnetcdf  -lhdf5 -lhdf5_hl -lhdf5_fortran -lhdf5hl_fortran\
+                -lhdf5_hl_cpp -lhdf5_cpp
+#
+#              -L/uwork1/uschaett/openmpi_pgi/lib64                                 \
+#              -L/uwork1/uschaett/opt/pgi/linux86-64/2017/lib/                      \
+#              /uwork1/uschaett/lib_pgi/netcdf-4.4.1/lib64/libnetcdff.a             \
+#              /uwork1/uschaett/lib_pgi/netcdf-4.4.1/lib64/libnetcdf.a
+#              /usr/local/cuda/lib64/libcudart_static.a
+#

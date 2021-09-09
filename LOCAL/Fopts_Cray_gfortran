@@ -1,0 +1,41 @@
+#########
+#  Cray XC30
+#########
+#
+F90           = ftn -cpp -c  -ffree-line-length-0 -fcheck=all                \
+               -ffpe-trap=invalid,zero,overflow -fbacktrace  -fdump-core     \
+               -I$(SRCDIR)                                                   \
+               -I/e/uhome/uschaett/rttov/RTTOV10/radiance10.2_fromV5_3/obj   \
+                $(GRIB_API_INCLUDE)                                          \
+               -DGRIBDWD -DGRIBAPI -DNETCDF -DNUDGING -D__COSMO__ -DRTTOV10
+#              -I/e/uhome/uschaett/rttov/RTTOV10/radiance10.2_for_V5_2/obj   \
+#              -I/e/uhome/uschaett/rttov/RTTOV10/radiance10.2_fromV5_3/obj   \
+#              -I/e/uhome/rfaulwet/cosmo/libradiance/10.2_gfortran           \
+#
+# loader call
+LDPAR        = ftn
+LDSEQ        =
+#
+PROGRAM      = lmparbin_gnu
+#
+COMFLG1      = -O2 -g
+COMFLG2      = $(COMFLG1)
+COMFLG3      = $(COMFLG1)
+COMFLG4      = -g
+#
+#
+# options for debugging or profiling
+#
+# options used for linking
+LDFLG        = 
+#
+#
+# Libraries for Cray
+LIB          = -L$(CRAY_LD_LIBRARY_PATH) -L$(LIBDWD)/lib $(GRIB_API_LIB)             \
+               -lgrib1 -lgrib_api_f90 -lgrib_api -lnetcdff -lm                       \
+               /e/uhome/uschaett/rttov/RTTOV10/radiance10.2_fromV5_3/libradiance10.2.a \
+               /e/uhome/rfaulwet/hrit_tools/build/xc/gnu/Debug/src/libhrit.a         \
+               /e/uscratch/rfaulwet/trouble/lm_f90_rttov/rttov10.2_gfortran/librttov10.2.a
+#              /e/uhome/uschaett/rttov/RTTOV10/radiance10.2_for_V5_2/libradiance10.2.a \
+#              /e/uhome/uschaett/rttov/RTTOV10/radiance10.2_fromV5_3/libradiance10.2.a \
+#              /e/uhome/rfaulwet/cosmo/libradiance/10.2_gfortran/libradiance10.2.a   \
