@@ -104,11 +104,6 @@ USE sfc_snow_utilities      ! contains all required subroutines (see list in mod
 #endif
                         sobs             , & ! net shortwave radiation ( W/m2 )
                         thbs             , & ! net longwave radiation  ( W/m2 )
-                        !swdir_s          , & ! direct short wave radiation at ground         (W/m2)
-                        !swdifd_s         , & ! diffuse short wave radiation at ground        (W/m2)
-                        !swdifu_s         , & ! diffuse/upward short wave radiation at ground (W/m2)
-                        !lwd_s            , & ! direct/icoming short wave radiation at ground (W/m2)
-                        !lwu_s            , & ! emitted long wave radiation at ground         (W/m2)
 
                         ! surface
                         t_snow_now       , & ! temperature of the snow-surface              (  K  )
@@ -117,8 +112,8 @@ USE sfc_snow_utilities      ! contains all required subroutines (see list in mod
                         zlhfl_snow       , & ! latent   heat flux snow/air interface        ( W/m2)
 
                         ! snow
-                        t_sn_now         , & ! snow temperature (main level)                (  K  )
-                        t_sn_new         , & ! snow temperature (main level)                (  K  )
+                        t_sn_now         , & ! snow temperature (nodes)                (  K  )
+                        t_sn_new         , & ! snow temperature (nodes)                (  K  )
                         theta_i_now      , & ! volumetric ice content                       (  -  )
                         theta_i_new      , & ! volumetric ice content                       (  -  )
                         theta_w_now      , & ! volumetric water content                     (  -  )
@@ -139,18 +134,9 @@ USE sfc_snow_utilities      ! contains all required subroutines (see list in mod
                         w_snow_new       , & ! water content of snow                        (m H2O)
  
                         rho_snow_new     , & ! equivalent density of snow layer           ( kg / m3) 
-
-                        ! soil
-                        t_so_now         , & ! soil temperature (main level)                (  K  )
-                        t_so_new         , & ! soil temperature (main level)                (  K  )
-                        w_so_now         , & ! total water conent (ice + liquid water)      (m H20)
-                        w_so_new         , & ! total water conent (ice + liquid water)      (m H20)
-                        w_so_ice_now     , & ! ice content                                  (m H20)
-                        w_so_ice_new     , & ! ice content                                  (m H20)
-                        zmls             , & ! processing soil level structure
-                        plcov            , & ! fraction of plant cover                        --
-                        rootdp           , & ! depth of the roots                           ( m  )
-                        soiltyp_subs       ) ! type of the soil (keys 0-9)                    --
+                        t_so_now         , & 
+                        t_so_new           &
+                        ) 
 
         
 ! =============================================================================
@@ -212,13 +198,6 @@ USE sfc_snow_utilities      ! contains all required subroutines (see list in mod
                   sobs             , & ! net shortwave radiation (W/m2)
                   thbs                 ! net longwave radiation  (W/m2)
 
-!  REAL    (KIND = vpp), DIMENSION(nvec), INTENT(INOUT) :: &
-!                  swdir_s          , & ! direct short wave radiation at ground         (W/m2)
-!                  swdifd_s         , & ! diffuse short wave radiation at ground        (W/m2)
-!                  swdifu_s         , & ! diffuse/upward short wave radiation at ground (W/m2)
-!                  lwd_s            , & ! direct/icoming short wave radiation at ground (W/m2)
-!                  lwu_s                ! emitted long wave radiation at ground         (W/m2)
-
   ! surface
   REAL    (KIND = vpp), DIMENSION(nvec), INTENT(INOUT) :: &
                   t_snow_now           ! temperature of the snow-surface (K)
@@ -236,18 +215,20 @@ USE sfc_snow_utilities      ! contains all required subroutines (see list in mod
 
 
    REAL    (KIND = vpp)    , DIMENSION(nvec,1:ke_snow), INTENT(INOUT) :: &
-                  t_sn_now          , &   ! snow temperature (main level)              (K)
                   theta_i_now       , &   ! volumetric ice content                     (-)
                   theta_w_now       , &   ! water ice content                          (-)
                   theta_a_now       , &   ! air ice content                            (-)
                   dzm_sn_now              ! layer thickness between main levels        (m)
 
    REAL    (KIND = vpp)    , DIMENSION(nvec,1:ke_snow), INTENT(OUT) :: &
-                  t_sn_new          , &   ! snow temperature (main level)              (K)
                   theta_i_new       , &   ! volumetric ice content                     (-)
                   theta_w_new       , &   ! water ice content                          (-)
                   theta_a_new       , &   ! air ice content                            (-)
                   dzm_sn_new              ! layer thickness between main levels        (m)
+
+   REAL    (KIND = vpp)    , DIMENSION(nvec,1:ke_snow+1), INTENT(INOUT) :: t_sn_now ! NODAL TEMPERATURES
+ 
+   REAL    (KIND = vpp)    , DIMENSION(nvec,1:ke_snow+1), INTENT(OUT)   :: t_sn_new ! UPDATED NODAL TEMPERATURES
 
    REAL    (KIND = vpp)    , DIMENSION(nvec), INTENT(INOUT) :: &
                   hn_sn_now              ! new snow amounts (storage)                  (m)
@@ -266,32 +247,12 @@ USE sfc_snow_utilities      ! contains all required subroutines (see list in mod
 
    REAL    (KIND = vpp)    , DIMENSION(nvec), INTENT(INOUT) :: &
                   rho_snow_new              ! water content (snow water equivialent) of snow cover        (-)
-
-
    ! soil
    REAL    (KIND = vpp), DIMENSION(nvec,0:ke_soil+1), INTENT(INOUT) :: &
                   t_so_now             ! soil temperature (main level)                (  K  )
 
    REAL    (KIND = vpp), DIMENSION(nvec,0:ke_soil+1), INTENT(OUT) :: &
                   t_so_new             ! soil temperature (main level)                (  K  )
- 
-   REAL    (KIND = vpp), DIMENSION(nvec,ke_soil+1), INTENT(INOUT) :: &
-                  w_so_now         , & ! total water conent (ice + liquid water)      (m H20)
-                  w_so_ice_now         ! ice content                                  (m H20)
-
-   REAL    (KIND = vpp), DIMENSION(nvec,ke_soil+1), INTENT(OUT) :: &
-                  w_so_new         , & ! total water conent (ice + liquid water)      (m H20)
-                  w_so_ice_new         ! ice content                                  (m H20)
-      
-   REAL    (KIND = vpp), DIMENSION(ke_soil+1), INTENT(IN) :: &
-                  zmls                 ! processing soil level structure
-
-   REAL    (KIND = vpp), DIMENSION(nvec), INTENT(IN) :: &
-                  plcov            , & ! fraction of plant cover                         --
-                  rootdp               ! depth of the roots                            ( m  )
-
-   INTEGER, DIMENSION(nvec), INTENT(IN) :: &
-                  soiltyp_subs         ! type of the soil (keys 0-9)                     --
 
 ! ------------------------
 ! + Local
@@ -302,8 +263,6 @@ USE sfc_snow_utilities      ! contains all required subroutines (see list in mod
      ! Indices
      i               , & ! loop index in x-drection
      ksn             , & ! loop index for snow layers
-     kso             , & ! loop index for soil layers
-     mstyp           , & ! soil type index
      l_top           , &
      counter
 
@@ -316,9 +275,7 @@ USE sfc_snow_utilities      ! contains all required subroutines (see list in mod
 
      zsnow_rate    , & ! rate of snow fall               [kg/m**2 s]
      zrain_rate    , & ! rate of rain fall               [kg/m**2 s]
-
      zuv           , & ! wind speed                      [m/s]
-
      l_t0_melt
      ! Snow paramters
 
@@ -341,26 +298,24 @@ USE sfc_snow_utilities      ! contains all required subroutines (see list in mod
      swnet_sn     , &  ! net short wave radiation                    [W/m**2]
      for_sn       , &  ! total atmospheric forcing at snow surface   [W/m**2]
      runoff_sn    , &  ! total melt runoff
-     swe_sn            ! local S.W.E calculation
+     swe_sn       , &  ! local S.W.E calculation
+     delta_rad         ! delta coefficient for linearizing net longwave radiation
+ 
 
    INTEGER, DIMENSION(nvec)          :: &
 
-     top              ! index of first (top) snow layer  [-] 
+     top        , &      ! index of first (top) snow layer  [-] 
+     merge_point
 
    REAL   (KIND=vpp) ::  &
 
-     hm_sn       (nvec,1:ke_snow)  , & ! height (from bottom) of snow layers (main level)     (m)      
-     zm_sn       (nvec,1:ke_snow)  , & ! depth (from top) of snow layers (main level)         (m)
-
      rho_sn      (nvec,1:ke_snow)  , & ! density of snow layers                               (kg/m**3)
-     m_sn        (nvec,1:ke_snow)  , & ! layer mass                                           (kg)
      hcap_sn     (nvec,1:ke_snow)  , & ! snow layer heat capacity
      hcon_sn     (nvec,1:ke_snow)  , & !            heat conductivity
      hdif_sn     (nvec,1:ke_snow)  , & !            heat diffusion
 
      swabs_sn    (nvec,1:ke_snow)  , & ! absorbed short wave radiation
 
-     zm_sn_old   (nvec,1:ke_snow)  , & ! old value of layer depth
      theta_i_old (nvec,1:ke_snow)  , & !              volumetric ice content
      theta_w_old (nvec,1:ke_snow)      !              volumetric water content
 
@@ -374,67 +329,21 @@ USE sfc_snow_utilities      ! contains all required subroutines (see list in mod
       tmp_sn (ke_snow)         ! temporary vector      
 
 
-    REAL    (KIND = vpp)   :: &
-
-      ziw_fr      (nvec,ke_soil+1)   , & ! fractional ice content of soil layer
-      zlw_fr      (nvec,ke_soil+1)   , & ! fractional liqu. water content of soil layer
-      zw_fr       (nvec,ke_soil+1)   , & ! fractional total water content of soil layers
-      zroc        (nvec,ke_soil+1)   , & ! heat capacity of soil layers
-      zrocg       (nvec,ke_soil+1)   , & ! total volumetric heat capacity of soil
-      zrocg_soil  (nvec,ke_soil+1)   , & !
-
-      zalam       (nvec,ke_soil)     , & ! heat conductivity
-      zalamtmp    (nvec,ke_soil)     , & ! heat conductivity
-      hzalam      (nvec,ke_soil+1)   , & ! heat conductivity (auxilary variable)
-
-      zfcap    (nvec,ke_soil+1)      , & ! field capacity of soil
-      zporv    (nvec,ke_soil+1)      , & ! pore volume (fraction of volume)
-      zpwp     (nvec,ke_soil+1)      , & ! plant wilting point (fraction of volume)   
-      zdlam    (nvec)                    ! heat conductivity parameterilting point  (fraction of volume)
-     
 #endif
 
-    REAL     (KIND = vpp)  :: &
-
-      zzz                                ! utility variable
-
-    REAL     (KIND = vpp)  :: &
-
-      zwqg           , & ! mean of fcap and pwp
-      z4wdpv             ! 4*zwqg/porv
-
   REAL (KIND=vpp)       ::  &
-
     dlw_u_sn              , &  ! derivative of upwelling longwave radiation for snow on the ground    (W m-2)
     dz_up                 , &  ! thickness above the layer of interest                                (m)
     dz_low                , &  ! thickness below the layer of interest                                (m)
     beta
 
-  REAL (KIND=vpp), DIMENSION(-ke_snow+1:ke_soil+1) :: &
-
-    zm                   , &  ! depth of main levels
-
-    hcon                 , & ! heat conductivity
-    hcap                 , & ! heat capacity
-    hdif                 , & ! heat diffusivity
-
-    rho                  , &  ! density
-
-    t_sol                , &  ! temperature of the snow/substrate column
-
-    sw_abs               , &  ! absorbed short-wave radiaton in each layer
-
-    alpha                , &  ! utility variables for building and solving the tri-diagonal matrix
-    gamma_sol            , &  !
-
-    a                    , &  !
-    b                    , &  !
-    c                    , &  !
-    d                    , &  !
-    e                         ! final snow layer temperature
+  REAL (KIND=vpp), DIMENSION(1:ke_snow+1) :: &
+    a_matrix                    , &  !
+    b_matrix                    , &  !
+    c_matrix                    , &  !
+    d_matrix
 
   REAL    (KIND = vpp) ::  &
-
     dT_sub_melt             , & ! difference between current temperature and melting temperature
     A_sub_melt              , & ! coefficient A_sub_melt (see notes below)
     dtheta_i       , & ! change in volumetric ice content
@@ -443,7 +352,6 @@ USE sfc_snow_utilities      ! contains all required subroutines (see list in mod
     q_rest
 
   REAL    (KIND = vpp) :: &
-
     frac_rho        , &    ! fraction of density water to ice
     limit_theta_i   , &    ! abc-formula
     w_up            , &    ! water content of upper layer
@@ -460,8 +368,11 @@ USE sfc_snow_utilities      ! contains all required subroutines (see list in mod
     res_wat_cont    , &    ! potential residual water content
     dtheta_w_sub_wtr       ! additional storage capacity due to refreezing
 
-  REAL (KIND = vpp)        :: &
+  REAL ( KIND = vpp), DIMENSION(nvec,1:ke_snow) :: &
+    t_sn_elem
 
+
+  REAL (KIND = vpp)        :: &
     dL                         , & ! change of layer thickness
     dM                         , & ! change of layer mass
     M                          , & ! initial mass and volmetric content (water of ice)
@@ -471,13 +382,11 @@ USE sfc_snow_utilities      ! contains all required subroutines (see list in mod
 
     ! After Andresen (1976)
    REAL(KIND=vpp), PARAMETER ::  &
-
      c2       = 23.0E-3_vpp              , &  ! Coefficinet [m3/kg]
      eta0     = 9.0E5_vpp                , &  ! The Viscosity Coefficient Eta0 [kg-s/m2]
      c_factor = 0.08_vpp                      ! snow compaction overburden exponential factor (1/K)
 
    REAL    (KIND = vpp) :: &
-
      rate_1                              , & ! settling rate for ice loss (s**-1)
      rate_2                              , & ! overburden stress (s**-1)
      overburden                          , & ! overburden load
@@ -485,26 +394,27 @@ USE sfc_snow_utilities      ! contains all required subroutines (see list in mod
      ddz                                     ! change of layer thickness
 
    REAL    (KIND = vpp)                          :: &
-
      dz_old                              , & ! old layer thickness before settling     (m)
      dz_new                                  ! new layer thickness after settling      (m)
 
    ! After Vionnet (2012)
    REAL(KIND=vpp), PARAMETER ::  &
-
      a_eta = 0.1_vpp                     , &   !  default  0.1_vpp
      b_eta = 0.023_vpp                   , &   !           0.023_vpp
      c_eta = 250.0_vpp                   , &   !           250.0_vpp
      eta_0 = 7.62237E6_vpp                     !           7.62237E6_vpp
 
-     REAL    (KIND = vpp) :: &
-
+   REAL    (KIND = vpp) :: &
      f1                              , &
      f2                              , &
      eta
 
    INTEGER(KIND=vpp) :: j,lay
 
+   integer(kind=vpp) :: elems_left,l_mergep,l_thinlayer_merge,merge_elems
+   integer(kind=vpp) :: num_new_elems
+
+   real(kind=vpp), parameter :: new_snow_elem = 0.01
 #ifdef __ICON__
   INTEGER :: my_cart_id
 #endif
@@ -517,6 +427,12 @@ USE sfc_snow_utilities      ! contains all required subroutines (see list in mod
 
   real (kind = vpp) :: l_hsnow,l_mass,l_lh_sn
   real (kind = vpp) :: tmp,tmp_rate_1,tmp_rate_2
+
+  real (kind = vpp) :: alpha_solver_down,alpha_solver_up
+  real (kind = vpp) :: beta_solver_down,beta_solver_up
+  real (kind = vpp) :: coeff
+  real (kind = vpp) :: t_emiss, emiss
+  real (kind = vpp) :: lower_bc
 ! ------------------------------------------------------------------------------
 ! - End declarations
 ! ------------------------------------------------------------------------------
@@ -525,50 +441,13 @@ USE sfc_snow_utilities      ! contains all required subroutines (see list in mod
 ! + Begin Section NULLA: Initialisation(s)
 ! ------------------------------------------------------------------------------
 
-  ! ------------------------
-  ! Intiate local scalars
-  ! -----------------------
-
-!   write(*,*) ntstep,prs_gsp,prr_gsp,prs_con,prr_con
-
-   ! Set the debug organizational variables
-#ifdef __ICON__
-   my_cart_id = get_my_global_mpi_id()
-#ifdef _OPENMP
-   my_thrd_id = omp_get_thread_num()
-#endif
-#endif
-   mcid = iid_dbg
-   mbid = ibl_b
-   mvid = isc_b
-   mtid =   0
-
 ! Just do some checkout prints:
   IF (ldebug) THEN
-!    IF (iblock == mbid .AND. my_cart_id == mcid) THEN
-!#ifdef _OPENMP
-!     IF (my_thrd_id == mtid) THEN
-!#endif
       WRITE(*,'(A,3I5)'   ) 'SFC-DIAGNOSIS snowpolino start:   ', ke_snow, ke_snow
-!#ifdef _OPENMP
-!     ENDIF
-!#endif
-!    ENDIF
-
-!    IF (iblock == mbid .AND. my_cart_id == mcid) THEN
-    !$acc update host(whatever is printed)
-!    ENDIF
 
     DO i = ivstart, ivend
-!      IF (i== mvid .AND. iblock == mbid .AND. my_cart_id == mcid) THEN
-!#ifdef _OPENMP
-!       IF (my_thrd_id == mtid) THEN
-!#endif
         WRITE(*,'(A,2I5)'  ) 'SFC-DIAGNOSIS snow:   iblock = ', iblock, i
         WRITE(*,'(A      )') ' External Parameters:  '
-        WRITE(*,'(A,I28  )') '   soiltyp          :  ', soiltyp_subs(i)
-        WRITE(*,'(A,F28.16)') '   plcov            :  ', plcov       (i)
-        WRITE(*,'(A,F28.16)') '   rootdp           :  ', rootdp      (i)
 
         WRITE(*,'(A      )') ' Single level parameters:'
         WRITE(*,'(A,F28.16)') '   u     ke         :  ', u           (i)
@@ -587,11 +466,6 @@ USE sfc_snow_utilities      ! contains all required subroutines (see list in mod
 #endif
         WRITE(*,'(A,F28.16)') '   sobs             :  ', sobs        (i)
         WRITE(*,'(A,F28.16)') '   thbs             :  ', thbs        (i)
-!        WRITE(*,'(A,F28.16)') '   swdir_s          :  ', swdir_s     (i)
-!        WRITE(*,'(A,F28.16)') '   swdifd_s         :  ', swdifd_s    (i)
-!        WRITE(*,'(A,F28.16)') '   swdifu_s         :  ', swdifu_s    (i)
-!        WRITE(*,'(A,F28.16)') '   lwd_s            :  ', lwd_s       (i)
-!        WRITE(*,'(A,F28.16)') '   lwu_s            :  ', lwu_s       (i)
         WRITE(*,'(A,F28.16)') '   t_snow_now       :  ', t_snow_now  (i)
         WRITE(*,'(A,F28.16)') '   h_snow           :  ', h_snow      (i)
         WRITE(*,'(A,F28.16)') '   w_snow_now       :  ', w_snow_now  (i)
@@ -599,170 +473,68 @@ USE sfc_snow_utilities      ! contains all required subroutines (see list in mod
         WRITE(*,'(A,F28.16)') '   top_sn_now       :  ', top_sn_now  (i)
 
         WRITE(*,'(A      )') ' Multi level parameters:'
-do k = 1, ke_snow
-        WRITE(*,'(A,I1,A,F28.16)') '   t_sn_now   (',k,')   :  ', t_sn_now    (i,k)
-enddo
-do k = 1, ke_snow
-        WRITE(*,'(A,I1,A,F28.16)') '   theta_i_now(',k,')   :  ', theta_i_now (i,k)
-enddo
-do k = 1, ke_snow
-        WRITE(*,'(A,I1,A,F28.16)') '   theta_w_now(',k,')   :  ', theta_w_now (i,k)
-enddo
-do k = 1, ke_snow
-        WRITE(*,'(A,I1,A,F28.16)') '   theta_a_now(',k,')   :  ', theta_a_now (i,k)
-enddo
-do k = 1, ke_snow
-        WRITE(*,'(A,I1,A,F28.16)') '   dzm_sn_now (',k,')   :  ', dzm_sn_now  (i,k)
-enddo
-do k = 0, ke_soil+1
-        WRITE(*,'(A,I1,A,F28.16)') '   t_so_now(',k,')      :  ', t_so_now    (i,k)
-enddo
-do k = 1, ke_soil+1
-        WRITE(*,'(A,I1,A,F28.16)') '   w_so_now(',k,')      :  ', w_so_now    (i,k)
-enddo
-do k = 1, ke_soil+1
-        WRITE(*,'(A,I1,A,F28.16)') '   w_so_ico_now(',k,')  :  ', w_so_ice_now(i,k)
-enddo
-do k = 1, ke_soil+1
-        WRITE(*,'(A,I1,A,F28.16)') '   zmls        (',k,')  :  ', zmls        (k)
-enddo
-!#ifdef _OPENMP
-!       ENDIF
-!#endif
-!      ENDIF
+        do k = 1, ke_snow+1
+             WRITE(*,'(A,I1,A,F28.16)') '   t_sn_now   (',k,')   :  ', t_sn_now    (i,k)
+        enddo
+        do k = 1, ke_snow
+             WRITE(*,'(A,I1,A,F28.16)') '   theta_i_now(',k,')   :  ', theta_i_now (i,k)
+        enddo
+        do k = 1, ke_snow
+             WRITE(*,'(A,I1,A,F28.16)') '   theta_w_now(',k,')   :  ', theta_w_now (i,k)
+        enddo
+        do k = 1, ke_snow
+             WRITE(*,'(A,I1,A,F28.16)') '   theta_a_now(',k,')   :  ', theta_a_now (i,k)
+        enddo
+        do k = 1, ke_snow
+             WRITE(*,'(A,I1,A,F28.16)') '   dzm_sn_now (',k,')   :  ', dzm_sn_now  (i,k)
+        enddo
     ENDDO
   ENDIF
 
 
    hdif_sn = 0.0_vpp
-   ! time step for soil variables
    zdt      = dt
-
-   !Subroutine arguments
-
-   !$acc data                                                                   &
-   !$acc present(u, v, t, qv, ps, prr_con, prs_con, conv_frac)                  &
-   !$acc present(prr_gsp, prs_gsp, prg_gsp)                                     &
-#ifdef TWOMOM_SB
-   !$acc present(prh_gsp)                                                       &
-#endif
-!   !$acc present(swdir_s, swdifd_s, swdifu_s, lwd_s, lwu_s)                     &
-   !$acc present(t_snow_now, t_snow_new, zshfl_snow, zlhfl_snow)                &
-   !$acc present(t_sn_now, t_sn_new, theta_i_now, theta_i_new)                  &
-   !$acc present(theta_w_now, theta_w_new, theta_a_new, theta_a_now)            &
-   !$acc present(dzm_sn_now, dzm_sn_new, hn_sn_now, hn_sn_new)                  &
-   !$acc present(top_sn_now, top_sn_new, h_snow, t_so_now, t_so_new)            &
-   !$acc present(w_so_ice_now, w_so_ice_new, w_so_now, w_so_new)                &         
-   !$acc present(zmls, plcov, rootdp, soiltyp_subs)                             & !SB: Not sure if global constant fields needed here
-   !$acc present(w_snow_new)
-
-   ! Local arrays
-   !$acc data                                                                   &
-   !$acc present (t_sn_sfc, sh_sn, lh_sn, tch_sn, alpha_sn, swnet_sn, for_sn,swe_sn)   &
-   !$acc present (runoff_sn, top, hm_sn, zm_sn, rho_sn, m_sn, hcap_sn, hcon_sn) &
-   !$acc present (hdif_sn, swabs_sn, zm_sn_old, theta_i_old, theta_w_old)       &
-   !$acc present (melt_flag, freeze_flag, tmp_sn)                               &
-   !$acc present (ziw_fr, zlw_fr, zw_fr, zroc, zrocg, zrocg_soil)               &
-   !$acc present (zalam, zalamtmp, hzalam, zfcap, zporv, zpwp, zdlam)
 
 
   ! ------------------------
   ! Intiate local fields
   ! -----------------------
 
-   !$acc parallel async default(none)
-   !$acc loop gang vector
    DO i = ivstart, ivend
-
      top(i) = NINT(top_sn_now(i)) 
-
    ENDDO
-   !$acc end parallel
-
-   !write(*,*) 'snowpolino start: ',top(1)
 
 
-   !$acc parallel async default(none)
-   !$acc loop gang vector
    DO i = ivstart, ivend
-
      t_sn_sfc(i) = t0_melt
-
      lh_sn(i)    = 0.0_vpp
      sh_sn(i)    = 0.0_vpp
-
      tch_sn(i)   = 0.0_vpp
-
      alpha_sn(i) = 0.85_vpp
-
      swnet_sn(i) = 0.0_vpp
-
      for_sn(i)   = 0.0_vpp
-
      swe_sn(i)   = 0.0_vpp
-
    ENDDO
-   !$acc end parallel
 
-
-
-
-   !$acc parallel async default(none)
-   !$acc loop gang vector 
-     DO i = ivstart, ivend
-       !$acc loop seq
-       DO ksn = 1, ke_snow
-
-       hm_sn   (i,ksn) = 0.0_vpp
-       zm_sn   (i,ksn) = 0.0_vpp
-       rho_sn  (i,ksn) = 0.0_vpp
-       m_sn    (i,ksn) = 0.0_vpp
-       hcon_sn (i,ksn) = 0.0_vpp
-       hcap_sn (i,ksn) = 0.0_vpp
-
-       swabs_sn(i,ksn) = 0.0_vpp
-
-     ENDDO
+   DO i = ivstart, ivend
+      DO ksn = 1, ke_snow
+         rho_sn  (i,ksn) = 0.0_vpp
+         hcon_sn (i,ksn) = 0.0_vpp
+         hcap_sn (i,ksn) = 0.0_vpp
+         swabs_sn(i,ksn) = 0.0_vpp
+      ENDDO
    ENDDO
-   !$acc end parallel
 
-   !$acc parallel async
-   !$acc loop gang vector private(l_top)
    DO i = ivstart, ivend
 
      l_top = top(i)
      IF(l_top .GE. 1) THEN
 
-        ! Update dependent variables
-        !CALL update(top(i), hm_sn(i,:), zm_sn(i,:), dzm_sn_now(i,:), m_sn(i,:)     , &
-        !theta_i_now(i,:), theta_w_now(i,:), theta_a_now(i,:), rho_sn(i,:)          , &
-        !hcap_sn(i,:), hcon_sn(i,:))
-
-        ! -------------------------
-        ! Height of snow (main) levels
-        ! -------------------------
-        !$acc loop seq
-        do ksn=1,l_top
-           if(ksn .eq. 1) then
-              hm_sn(i,ksn) = dzm_sn_now(i,ksn)
-           else
-              hm_sn(i,ksn) = hm_sn(i,ksn-1) + dzm_sn_now(i,ksn)
-           endif
-        enddo  
-
-        ! --------------------------
-        ! Depth of snow layer (main) levels
-        ! -------------------------
-        !$acc loop seq
-        do ksn = l_top,1,-1
-           zm_sn(i, (l_top+1) - ksn ) = hm_sn(i,ksn) !invert height vector
-           theta_a_now(i,ksn) = max(0.0_vpp,1.0_vpp - theta_i_now(i,ksn) - theta_w_now(i,ksn))
-        enddo
+         theta_a_now(i,:) = max(0.0_vpp,1.0_vpp - theta_i_now(i,:) - theta_w_now(i,:))
 
          ! --------------------------
          ! Snow layer density
          ! -------------------------
-         !$acc loop seq
          do ksn = 1, l_top, 1
             if(theta_i_now(i,ksn) .eq. 0.0_vpp) then
                rho_sn(i,ksn) = 0.0_vpp
@@ -771,81 +543,47 @@ enddo
             endif
          enddo
          
-       ! --------------------------
-       ! Heat capacity
-       ! --------------------------
-       !$acc loop seq
-       do ksn = 1, l_top, 1
-           if(rho_sn(i,ksn) .LT. eps) then
-             hcap_sn(i,ksn) = 0.0_vpp
-           else
-             hcap_sn(i,ksn) = (  rho_a   * theta_a_now(i,ksn) * specific_heat_air     &
-                               + rho_i   * theta_i_now(i,ksn) * specific_heat_ice     &
-                               + rho_w   * theta_w_now(i,ksn) * specific_heat_water)  &
-                                / rho_sn(i,ksn)
-           endif
-       enddo
+         ! --------------------------
+         ! Heat capacity
+         ! --------------------------
+         do ksn = 1, l_top, 1
+             if(rho_sn(i,ksn) .LT. eps) then
+               hcap_sn(i,ksn) = 0.0_vpp
+             else
+               hcap_sn(i,ksn) = (  rho_a   * theta_a_now(i,ksn) * specific_heat_air     &
+                                 + rho_i   * theta_i_now(i,ksn) * specific_heat_ice     &
+                                 + rho_w   * theta_w_now(i,ksn) * specific_heat_water)  &
+                                  / rho_sn(i,ksn)
+             endif
+         enddo
 
-       ! --------------------------
-       ! Heat conductivity
-       ! --------------------------
-        !$acc loop seq
-        do ksn = 1, l_top, 1
-           hcon_sn(i,ksn) = 2.22_vpp * EXP(1.88_vpp * LOG(rho_sn(i,ksn)/rho_i))
-        enddo
-     
-       ! --------------------------
-       ! Snow layer mass
-       ! --------------------------
-        !$acc loop seq
-        do ksn = 1, l_top, 1
-          if(ksn .EQ. 1) then
-             m_sn(i,ksn) = zm_sn(i,ksn) * ((theta_i_now(i,ksn) * rho_i) + (theta_w_now(i,ksn) * rho_w))
-           else
-             m_sn(i,ksn) = ABS(zm_sn(i,ksn) - zm_sn(i,ksn-1))  * ((theta_i_now(i,ksn) * rho_i) + (theta_w_now(i,ksn) * rho_w))
-           endif
-        enddo
+         ! --------------------------
+         ! Heat conductivity
+         ! --------------------------
+         do ksn = 1, l_top, 1
+             hcon_sn(i,ksn) = 2.22_vpp * EXP(1.88_vpp * LOG(rho_sn(i,ksn)/rho_i))
+         enddo
 
      ENDIF ! if (l_top .ge. 1) 
-
    ENDDO ! loop over grid points
-   !$acc end parallel
 
 ! ------------------------------------------------------------------------------
-! - End Section NULLA
+! - End Section Initializations
 ! ------------------------------------------------------------------------------
 
 ! ------------------------------------------------------------------------------
 ! + Begin Section I: New snow
 ! ------------------------------------------------------------------------------
 
-
-  !$acc parallel async
-  !$acc loop gang vector private (zsnow_rate, zuv, tmp_sn, l_top,l_t0_melt)
   DO i = ivstart, ivend
 
     l_top = top(i)  
-  
-    ! ----------------------
-    ! Calculate precipitation rate solid/liquid
-    ! ----------------------
-    if ( nclass_gscp >= 2000 ) then
-      ! only possible when running 2-moment microphysics
-#ifdef TWOMOM_SB
-      zsnow_rate = prs_gsp(i)+prs_con(i)+prg_gsp(i)+prh_gsp(i) ! [kg/m**2 s]
-#endif
-    elseif ( nclass_gscp >= 6 ) then
-      zsnow_rate = prs_gsp(i)+prs_con(i)+prg_gsp(i)            ! [kg/m**2 s]
-    else
-      zsnow_rate = prs_gsp(i)+prs_con(i)                       ! [kg/m**2 s]
-    endif
-
+    l_mergep = merge_point(i)
+ 
     ! VARUN: TO CHECK
     zrain_rate = (prr_gsp(i)+prr_con(i))  ! [kg/m**2 s]
     zsnow_rate = (prs_gsp(i)+prs_con(i))
  
-    ! zsnow_rate = prs_gsp(i)+prs_con(i) + prr_gsp(i) + prr_con(i)
-  
     ! ----------------------
     ! Calculate wind speed
     ! ----------------------
@@ -854,7 +592,6 @@ enddo
     ! ----------------------
     ! Calculate new snow amounts
     ! ----------------------
-
     IF(zsnow_rate .GT. 0.0_vpp) THEN ! there should be solid precipitation
 
       rho_hn = 0.0_vpp
@@ -863,446 +600,116 @@ enddo
       CALL new_snow_density(rho_hn, t(i), zuv, qv(i))      
 
       ! Calculate new snow amounts
-      hn_sn_now(i) =  hn_sn_now(i) + ( (zsnow_rate * zdt/rho_w) * rho_w/rho_hn )
-
-      ! ----------------------
-      ! Check if there is enough snow available for new layers, if so take  action
-      ! ----------------------
-      IF(hn_sn_now(i) .GE. max_height_layer) THEN  ! enough snow for a full layer
-
-        IF(l_top .LT. ke_snow) THEN ! snow cover thinner than ke_snow*max_snow_height
-
-             DO WHILE (hn_sn_now(i) .GT. max_height_layer .AND. l_top .LT. ke_snow)
-
-                 ! Limit hn to max_height_layers
-                 hn_sn_now(i)  = MIN(hn_sn_now(i), max_height_layer)
-    
-                 ! Get layer indices
-                 l_top = l_top + 1  ! new index of top layer
-    
-                 l_t0_melt            = real(t0_melt,vpp)
-                 dzm_sn_now(i,l_top)  = hn_sn_now(i)
-                 rho_sn(i,l_top)      = rho_hn
-                 theta_i_now(i,l_top) = rho_hn / rho_i
-                 theta_w_now(i,l_top) = 0.0_vpp
-                 theta_a_now(i,l_top) = 1.0_vpp - theta_i_now(i,l_top) - theta_w_now(i,l_top)
-                 t_sn_now(i,l_top)    = min(t(i),l_t0_melt)
-    
-                 !!! replacing Update function call
-                 ! -------------------------
-                 ! Height of snow (main) levels
-                 ! -------------------------
-                        !$acc loop seq
-                        do ksn=1,l_top
-                           if(ksn .eq. 1) then
-                              hm_sn(i,ksn) = dzm_sn_now(i,ksn)
-                           else
-                              hm_sn(i,ksn) = hm_sn(i,ksn-1) + dzm_sn_now(i,ksn)
-                           endif
-                        enddo  
-          
-                  ! --------------------------
-                  ! Depth of snow layer (main) levels
-                  ! -------------------------
-                        !$acc loop seq
-                        do ksn = l_top,1,-1
-                           zm_sn(i, (l_top+1) - ksn ) = hm_sn(i,ksn) !invert height vector
-                           theta_a_now(i,ksn) = max(0.0_vpp,1.0_vpp - theta_i_now(i,ksn) - theta_w_now(i,ksn))
-                        enddo
-          
-                  ! --------------------------
-                  ! Snow layer density
-                  ! -------------------------
-                         !$acc loop seq
-                         do ksn = 1, l_top, 1
-                            if(theta_i_now(i,ksn) .eq. 0.0_vpp) then
-                               rho_sn(i,ksn) = 0.0_vpp
-                            else
-                               rho_sn(i,ksn) = theta_i_now(i,ksn)*rho_i + theta_w_now(i,ksn)*rho_w
-                            endif
-                         enddo
-                         
-                  ! --------------------------
-                  ! Heat capacity
-                  ! --------------------------
-                   !$acc loop seq
-                   DO ksn = 1, l_top, 1
-                       IF(rho_sn(i,ksn) .LT. eps) THEN
-                         hcap_sn(i,ksn) = 0.0_vpp
-                       ELSE
-                         hcap_sn(i,ksn) = (  rho_a   * theta_a_now(i,ksn) * specific_heat_air     &
-                                           + rho_i   * theta_i_now(i,ksn) * specific_heat_ice     &
-                                           + rho_w   * theta_w_now(i,ksn) * specific_heat_water)  &
-                                            / rho_sn(i,ksn)
-                       ENDIF
-                   ENDDO
-          
-                  ! --------------------------
-                  ! Heat conductivity
-                  ! --------------------------
-                   !$acc loop seq
-                   DO ksn = 1, l_top, 1
-                      hcon_sn(i,ksn) = 2.22_vpp * EXP(1.88_vpp * LOG(rho_sn(i,ksn)/rho_i))
-                   ENDDO
-          
-                  ! --------------------------
-                  ! Snow layer mass
-                  ! --------------------------
-                   !$acc loop seq
-                   DO ksn = 1, l_top, 1
-                     IF(ksn .EQ. 1) THEN
-                        m_sn(i,ksn) = zm_sn(i,ksn) * ((theta_i_now(i,ksn) * rho_i) + (theta_w_now(i,ksn) * rho_w))
-                      ELSE
-                        m_sn(i,ksn) = ABS(zm_sn(i,ksn) - zm_sn(i,ksn-1))  * ((theta_i_now(i,ksn) * rho_i) + (theta_w_now(i,ksn) * rho_w))
-                      ENDIF
-                   ENDDO
-    
-                 ! Reset new snow storage
-                 hn_sn_now(i) = hn_sn_now(i) - max_height_layer
-    
-                 ! Update a few values NOTE this could maybe also happen in update()
-                 h_snow(i)   = hm_sn(i,l_top)
-                 t_sn_sfc(i) = t_sn_now(i,l_top)
-
-             ENDDO
+      hn_sn_now(i) =  hn_sn_now(i) + ( (zsnow_rate * zdt/rho_hn) )
 
 
-        ELSE ! ( i.e., ltop >= ke_snow) 
+      num_new_elems = floor(hn_sn_now(i)/new_snow_elem)
 
+      if(num_new_elems >= 1) then
 
-           ! --------------------
-           ! Merge/Add layers
-           ! --------------------
+        hn_sn_now(i) = hn_sn_now(i) - num_new_elems * new_snow_elem
 
-           DO WHILE (hn_sn_now(i) .GT. max_height_layer)
+        if( num_new_elems + l_top > ke_snow) then
+           merge_elems = num_new_elems + l_top - ke_snow
+           do j = 1,merge_elems
+            theta_i_now(i,l_mergep) =   (theta_i_now(i,l_mergep+j)*dzm_sn_now(i,l_mergep+j)                                        &
+                               +  theta_i_now(i,l_mergep)*dzm_sn_now(i,l_mergep)) / (dzm_sn_now(i,l_mergep+j) + dzm_sn_now(i,l_mergep))    ! volumetric ice content
 
-!VARUN: TO CHECK            ! Limit hn to max_height_layers
-!            hn_sn_now(i)  = MIN(hn_sn_now(i), max_height_layer)
+            theta_w_now(i,l_mergep) =   (theta_w_now(i,l_mergep+j)*dzm_sn_now(i,l_mergep+j)                                        &
+                               +  theta_w_now(i,l_mergep)*dzm_sn_now(i,l_mergep)) / (dzm_sn_now(i,l_mergep+j) + dzm_sn_now(i,l_mergep))    ! volumetric ice content
 
-            ! Merge bottom two layers
+            t_sn_elem(i,l_mergep)   =   (t_sn_elem(i,l_mergep+j)*dzm_sn_now(i,l_mergep+j)                                           &
+                               +  t_sn_elem(i,l_mergep)*dzm_sn_now(i,l_mergep))    / (dzm_sn_now(i,l_mergep+j) + dzm_sn_now(i,l_mergep))    ! snow layer temperature
 
-            theta_i_now(i,1) =   (theta_i_now(i,2)*dzm_sn_now(i,2)                                        &
-                               +  theta_i_now(i,1)*dzm_sn_now(i,1)) / (dzm_sn_now(i,2) + dzm_sn_now(i,1))    ! volumetric ice content
+            dzm_sn_now(i,l_mergep)  = dzm_sn_now(i,l_mergep) + dzm_sn_now(i,l_mergep+j)                                             ! layer thickness
 
-            theta_w_now(i,1) =   (theta_w_now(i,2)*dzm_sn_now(i,2)                                        &
-                               +  theta_w_now(i,1)*dzm_sn_now(i,1)) / (dzm_sn_now(i,2) + dzm_sn_now(i,1))    ! volumetric water content
+           enddo
 
-            t_sn_now(i,1)    =   (t_sn_now(i,2)*dzm_sn_now(i,2)                                           &
-                               +  t_sn_now(i,1)*dzm_sn_now(i,1))    / (dzm_sn_now(i,2) + dzm_sn_now(i,1))    ! snow layer temperature
+           elems_left = (l_top - l_mergep - merge_elems)
 
+           ! shift all elems down the array
+           theta_i_now(i,l_mergep+1:l_mergep+elems_left) = theta_i_now(i,l_mergep+merge_elems+1:l_top)
+           theta_w_now(i,l_mergep+1:l_mergep+elems_left) = theta_w_now(i,l_mergep+merge_elems+1:l_top)
+           t_sn_elem  (i,l_mergep+1:l_mergep+elems_left) =   t_sn_elem(i,l_mergep+merge_elems+1:l_top)
 
-            dzm_sn_now(i,1)  = dzm_sn_now(i,2) + dzm_sn_now(i,1)                                             ! layer thickness
-            
-            ! Update top layer index
-            l_top = l_top - 1
-
-             ! ------------------
-             ! Move layers down
-             ! -----------------
-
-               ! Layer thickness
-               ! ----------------------
-               tmp_sn(1:ke_snow) = dzm_sn_now(i,1:ke_snow)
-
-               DO ksn = ke_snow, 3, -1
-                 dzm_sn_now(i,ksn-1)  = tmp_sn(ksn)
-               ENDDO
-
-
-               ! Volumetric ice content
-               ! ----------------------
-               tmp_sn(1:ke_snow) = theta_i_now(i,1:ke_snow)
-
-               DO ksn = ke_snow, 3, -1
-                 theta_i_now(i,ksn-1)  = tmp_sn(ksn)
-               ENDDO
-
-
-               ! Volumetric water content
-               ! ----------------------
-               tmp_sn(1:ke_snow) = theta_w_now(i,1:ke_snow)
-
-               DO ksn = ke_snow, 3, -1
-                 theta_w_now(i,ksn-1)  = tmp_sn(ksn)
-               ENDDO
-
-
-               ! Layer temperature
-               ! ----------------------
-               tmp_sn(1:ke_snow) = t_sn_now(i,1:ke_snow)
-
-               DO ksn = ke_snow, 3, -1
-                 t_sn_now(i,ksn-1)  = tmp_sn(ksn)
-               ENDDO
-
-             ! -------------------
-             ! Add new snow layer and assign properties
-             ! -------------------
-
-               ! limit top layer index it can/should only be ke_snow here
-               l_top = MIN(l_top + 1 , ke_snow)                         
-
-               ! Assign properties
-               dzm_sn_now(i,l_top)   = max_height_layer  !hn_sn_now(i)
-
-               rho_sn(i,l_top)       = rho_hn
-
-               theta_i_now(i,l_top)  = rho_hn / rho_i
-               theta_w_now(i,l_top)  = 0.0_vpp           ! new snow is always dry
-               theta_a_now(i,l_top)  = 1.0_vpp - theta_i_now(i,l_top) - theta_w_now(i,l_top)
-
-               t_sn_now(i,l_top)     = MIN(t(i), t0_melt)
-
-                ! -------------------------
-                ! Height of snow (main) levels
-                ! -------------------------
-                      !$acc loop seq
-                      do ksn=1,l_top
-                         if(ksn .eq. 1) then
-                            hm_sn(i,ksn) = dzm_sn_now(i,ksn)
-                         else
-                            hm_sn(i,ksn) = hm_sn(i,ksn-1) + dzm_sn_now(i,ksn)
-                         endif
-                      enddo  
-       
-                ! --------------------------
-                ! Depth of snow layer (main) levels
-                ! -------------------------
-                      !$acc loop seq
-                      do ksn = l_top,1,-1
-                         zm_sn(i, (l_top+1) - ksn ) = hm_sn(i,ksn) !invert height vector
-                         theta_a_now(i,ksn) = max(0.0_vpp,1.0_vpp - theta_i_now(i,ksn) - theta_w_now(i,ksn))
-                      enddo
-       
-                ! --------------------------
-                ! Snow layer density
-                ! -------------------------
-                       !$acc loop seq
-                       do ksn = 1, l_top, 1
-                          if(theta_i_now(i,ksn) .eq. 0.0_vpp) then
-                             rho_sn(i,ksn) = 0.0_vpp
-                          else
-                             rho_sn(i,ksn) = theta_i_now(i,ksn)*rho_i + theta_w_now(i,ksn)*rho_w
-                          endif
-                       enddo
-                       
-                ! --------------------------
-                ! Heat capacity
-                ! --------------------------
-                 !$acc loop seq
-                 DO ksn = 1, l_top, 1
-                     IF(rho_sn(i,ksn) .LT. eps) THEN
-                       hcap_sn(i,ksn) = 0.0_vpp
-                     ELSE
-                       hcap_sn(i,ksn) = (  rho_a   * theta_a_now(i,ksn) * specific_heat_air     &
-                                         + rho_i   * theta_i_now(i,ksn) * specific_heat_ice     &
-                                         + rho_w   * theta_w_now(i,ksn) * specific_heat_water)  &
-                                          / rho_sn(i,ksn)
-                     ENDIF
-                 ENDDO
-       
-                ! --------------------------
-                ! Heat conductivity
-                ! --------------------------
-                 !$acc loop seq
-                 DO ksn = 1, l_top, 1
-                    hcon_sn(i,ksn) = 2.22_vpp * EXP(1.88_vpp * LOG(rho_sn(i,ksn)/rho_i))
-                 ENDDO
-       
-                ! --------------------------
-                ! Snow layer mass
-                ! --------------------------
-                 !$acc loop seq
-                 DO ksn = 1, l_top, 1
-                   IF(ksn .EQ. 1) THEN
-                      m_sn(i,ksn) = zm_sn(i,ksn) * ((theta_i_now(i,ksn) * rho_i) + (theta_w_now(i,ksn) * rho_w))
-                    ELSE
-                      m_sn(i,ksn) = ABS(zm_sn(i,ksn) - zm_sn(i,ksn-1))  * ((theta_i_now(i,ksn) * rho_i) + (theta_w_now(i,ksn) * rho_w))
-                    ENDIF
-                 ENDDO
-
-            ! Reset new snow storage
-            hn_sn_now(i) = hn_sn_now(i) - max_height_layer
-
-            ! Update a few values NOTE this could maybe also happen in update()
-            h_snow(i)   = hm_sn(i,l_top)
-            t_sn_sfc(i) = t_sn_now(i,l_top)
-
-           ENDDO ! end do while
-
-
-
-         ENDIF ! if l_top .ge. or .le. top layer  ! end thin or thick snow cover 
-
-
-      ENDIF ! if enough snow is available for creating a new snow layer
-
-
-    ELSE ! no snowfall check if bottom layer can be splitted
-
-     IF(l_top .LT. ke_snow .AND. dzm_sn_now(i,1) .GT. (2.0_vpp*max_height_layer)) THEN ! bottoom layer can be split
-!      if(l_top .lt. ke_snow) then
-
-!        do while (l_top .lt. ke_snow )
-        DO WHILE (l_top .LT. ke_snow .AND. dzm_sn_now(i,1) .GT. (2.0_vpp*max_height_layer))
-
-          ! -------------------
-          ! Move layers up
-          ! -------------------
-
-          ! Layer thickness
-          tmp_sn(1:ke_snow) = dzm_sn_now(i,1:ke_snow)
-
-          !$acc loop seq
-          DO ksn = 2, ke_snow-1, 1
-            dzm_sn_now(i,ksn+1) = tmp_sn(ksn)
-          ENDDO
-
-          ! Volumetric ice content
-          tmp_sn(1:ke_snow) = theta_i_now(i,1:ke_snow)
-
-          !$acc loop seq
-          DO ksn = 2, ke_snow-1, 1
-            theta_i_now(i,ksn+1) = tmp_sn(ksn)
-          ENDDO
-
-          ! Volumetric water content
-          tmp_sn(1:ke_snow) = theta_w_now(i,1:ke_snow)
-
-          !$acc loop seq
-          DO ksn = 2, ke_snow-1, 1
-            theta_w_now(i,ksn+1) = tmp_sn(ksn)
-          ENDDO
-
-          ! Layer temperature
-          tmp_sn(1:ke_snow) = t_sn_now(i,1:ke_snow)
-
-          !$acc loop seq
-          DO ksn = 2, ke_snow-1, 1
-            t_sn_now(i,ksn+1) = tmp_sn(ksn)
-          ENDDO
-
-          ! ---------------------
-          ! Split bottom layer
-          ! --------------------
-
-          dzm_sn_now(i,1)  = dzm_sn_now(i,1) - max_height_layer
-          dzm_sn_now(i,2)  = max_height_layer
-!          dzm_sn_now(i,1) = dzm_sn_now(i,1)/2.0
-!          dzm_sn_now(i,2) = dzm_sn_now(i,1)
-
-          theta_i_now(i,2) = theta_i_now(i,1)
-          theta_w_now(i,2) = theta_w_now(i,1)
-
-          t_sn_now(i,2)    = t_sn_now(i,1)
-
-          ! Update dependent variables
-          l_top = l_top + 1
-
-              !!! replacing Update function call
-              ! -------------------------
-              ! Height of snow (main) levels
-              ! -------------------------
-                    !$acc loop seq
-                    do ksn=1,l_top
-                       if(ksn .eq. 1) then
-                          hm_sn(i,ksn) = dzm_sn_now(i,ksn)
-                       else
-                          hm_sn(i,ksn) = hm_sn(i,ksn-1) + dzm_sn_now(i,ksn)
-                       endif
-                    enddo  
-      
-              ! --------------------------
-              ! Depth of snow layer (main) levels
-              ! -------------------------
-                    !$acc loop seq
-                    do ksn = l_top,1,-1
-                       zm_sn(i, (l_top+1) - ksn ) = hm_sn(i,ksn) !invert height vector
-                       theta_a_now(i,ksn) = max(0.0_vpp,1.0_vpp - theta_i_now(i,ksn) - theta_w_now(i,ksn))
-                    enddo
-      
-              ! --------------------------
-              ! Snow layer density
-              ! -------------------------
-                     !$acc loop seq
-                     do ksn = 1, l_top, 1
-                        if(theta_i_now(i,ksn) .eq. 0.0_vpp) then
-                           rho_sn(i,ksn) = 0.0_vpp
-                        else
-                           rho_sn(i,ksn) = theta_i_now(i,ksn)*rho_i + theta_w_now(i,ksn)*rho_w
-                        endif
-                     enddo
-                     
-              ! --------------------------
-              ! Heat capacity
-              ! --------------------------
-               !$acc loop seq
-               DO ksn = 1, l_top, 1
-                   IF(rho_sn(i,ksn) .LT. eps) THEN
-                     hcap_sn(i,ksn) = 0.0_vpp
-                   ELSE
-                     hcap_sn(i,ksn) = (  rho_a   * theta_a_now(i,ksn) * specific_heat_air     &
-                                       + rho_i   * theta_i_now(i,ksn) * specific_heat_ice     &
-                                       + rho_w   * theta_w_now(i,ksn) * specific_heat_water)  &
-                                        / rho_sn(i,ksn)
-                   ENDIF
-               ENDDO
-      
-              ! --------------------------
-              ! Heat conductivity
-              ! --------------------------
-               !$acc loop seq
-               DO ksn = 1, l_top, 1
-                  hcon_sn(i,ksn) = 2.22_vpp * EXP(1.88_vpp * LOG(rho_sn(i,ksn)/rho_i))
-               ENDDO
-      
-              ! --------------------------
-              ! Snow layer mass
-              ! --------------------------
-               !$acc loop seq
-               DO ksn = 1, l_top, 1
-                 IF(ksn .EQ. 1) THEN
-                    m_sn(i,ksn) = zm_sn(i,ksn) * ((theta_i_now(i,ksn) * rho_i) + (theta_w_now(i,ksn) * rho_w))
-                  ELSE
-                    m_sn(i,ksn) = ABS(zm_sn(i,ksn) - zm_sn(i,ksn-1))  * ((theta_i_now(i,ksn) * rho_i) + (theta_w_now(i,ksn) * rho_w))
-                  ENDIF
-               ENDDO
-
-         !CALL update(top(i), hm_sn(i,:), zm_sn(i,:), dzm_sn_now(i,:), m_sn(i,:)         , &
-         !            theta_i_now(i,:), theta_w_now(i,:), theta_a_now(i,:), rho_sn(i,:)  , &
-         !            hcap_sn(i,:), hcon_sn(i,:))
-
-         ! Update a few values NOTE this could maybe also happen in update()
-         h_snow(i)   = hm_sn(i,l_top)
-         t_sn_sfc(i) = t_sn_now(i,l_top)
-
-       ENDDO ! end do while
-
-     ENDIF ! split bottom layer
-
-    ENDIF ! snowfall or no snow that was the question
-
-  top(i) = l_top      
-  ENDDO
-  !$acc end parallel
+           l_top = l_top - merge_elems;
+
+
+        endif ! if( num_new_elems + l_top > ke_snow)
+
+        do j=1,num_new_elems
+   
+          ! add new elems
+          dzm_sn_now(i,l_top + j) = new_snow_elem
+          rho_sn(i,l_top + j)     = rho_hn
+          theta_i_now(i,l_top+j) = rho_hn / rho_i
+          theta_w_now(i,l_top+j) = 0.0_vpp
+          theta_a_now(i,l_top+j) = 1.0_vpp - theta_i_now(i,l_top+j) - theta_w_now(i,l_top+j)
+          t_sn_elem(i,l_top+j)    = min(t(i),l_t0_melt)
+ 
+        enddo
+          l_top = l_top + num_new_elems
+
+      endif ! if (num_new_elems >= 1)
+
+      ! shift for changing merge point 
+
+      if(dzm_sn_now(i,l_mergep) > 1.0_vpp) then
+         l_mergep = l_mergep + 1
+      endif
+
+  endif
+
+     top(i) = l_top      
+     merge_point(i) = l_mergep
+enddo
 
 ! ------------------------------------------------------------------------------
 ! - End Section I: New snow
 ! ------------------------------------------------------------------------------
 
-!! FOR DEBUGGING
-!if(ntstep .eq. N_IMP) then
-l_hsnow = 0.0
-l_mass  = 0.0
-   do ksn = 1,top(1)
-!     write(*,*) 'end section I: ',iblock,ksn,theta_i_now(1,ksn),theta_a_now(1,ksn),theta_w_now(1,ksn),t_sn_now(1,ksn)
-      l_hsnow = l_hsnow + dzm_sn_now(1,ksn)
-      l_mass = l_mass + dzm_sn_now(1,ksn)*rho_sn(1,ksn)
-   enddo
-   write(*,'(A20,I6,2F28.16)' ) 'end section I: ',ntstep,l_hsnow,l_mass
-!endif
+!! updating element properties
+   DO i = ivstart, ivend
 
+     l_top = top(i)
+     IF(l_top .GE. 1) THEN
 
+         theta_a_now(i,:) = max(0.0_vpp,1.0_vpp - theta_i_now(i,:) - theta_w_now(i,:))
+
+         ! --------------------------
+         ! Snow layer density
+         ! -------------------------
+         do ksn = 1, l_top, 1
+            if(theta_i_now(i,ksn) .eq. 0.0_vpp) then
+               rho_sn(i,ksn) = 0.0_vpp
+            else
+               rho_sn(i,ksn) = theta_i_now(i,ksn)*rho_i + theta_w_now(i,ksn)*rho_w
+            endif
+         enddo
+         
+         ! --------------------------
+         ! Heat capacity
+         ! --------------------------
+         do ksn = 1, l_top, 1
+             if(rho_sn(i,ksn) .LT. eps) then
+               hcap_sn(i,ksn) = 0.0_vpp
+             else
+               hcap_sn(i,ksn) = (  rho_a   * theta_a_now(i,ksn) * specific_heat_air     &
+                                 + rho_i   * theta_i_now(i,ksn) * specific_heat_ice     &
+                                 + rho_w   * theta_w_now(i,ksn) * specific_heat_water)  &
+                                  / rho_sn(i,ksn)
+             endif
+         enddo
+
+         ! --------------------------
+         ! Heat conductivity
+         ! --------------------------
+         do ksn = 1, l_top, 1
+             hcon_sn(i,ksn) = 2.22_vpp * EXP(1.88_vpp * LOG(rho_sn(i,ksn)/rho_i))
+         enddo
+
+     ENDIF ! if (l_top .ge. 1) 
+   ENDDO ! loop over grid points
 
 ! =============================================================================
 ! + Begin Section II: Atmospheric forcing & Heat Equation 
@@ -1312,27 +719,23 @@ l_mass  = 0.0
   ! Some updating
   ! --------------------
 
-    !$acc parallel async default(none)
-    !$acc loop gang vector
     DO i = ivstart, ivend
-      IF(top(i) .GE. 1) THEN
-        t_sn_sfc(i) = t_sn_now(i,top(i))
+      l_top = top(i)
+      IF(l_top .GE. 1) THEN
+        t_sn_sfc(i) = t_sn_now(i,l_top+1)
       ENDIF
     ENDDO
-    !$acc end parallel
 
 
   ! ----------------------------------------------------------------------------
   ! + Surface fluxes
   ! ---------------------------------------------------------------------------
   
-    !$acc parallel async default(none)
-    !$acc loop gang vector private (zuv)
     DO i = ivstart, ivend
 
       IF(top(i) .GE. 1 ) THEN   ! snow on the ground
 
-          zuv        = SQRT ( u(i)**2 + v(i)**2 )        ! wind speed
+          zuv        = SQRT ( u(i)*u(i) + v(i)*v(i) )        ! wind speed
       
         ! Calculate transfer coefficient
         ! ---------------  
@@ -1347,18 +750,21 @@ l_mass  = 0.0
 
         !  CALL rad_flux(swdir_s(i), swdifd_s(i), swdifu_s(i), lwd_s(i), lwu_s(i), alpha_sn(i), t(i), t_sn_sfc(i))
 
+           emiss   = thbs(i)/(sigma*t(i)*t(i)*t(i)*t(i))
+           t_emiss = sqrt(sqrt(emiss)) * t(i)
+
+           delta_rad(i) = sigma * (t_emiss + t_sn_sfc(i)) * (t_emiss * t_emiss + t_sn_sfc(i) * t_sn_sfc(i))
+
+
       ENDIF
     l_lh_sn = lh_sn(i)
       !lh_sn(i) = 0.0_vpp
     ENDDO
-    !$acc end parallel
   ! ----------------------------------------------------------------------------
   ! + Atmospheric forcing
   ! ----------------------------------------------------------------------------
 
 
-          !$acc parallel async default(none)
-          !$acc loop gang vector
           DO i = ivstart, ivend
 
             IF(top(i) .GE. 1) THEN ! snow on the ground
@@ -1368,245 +774,142 @@ l_mass  = 0.0
 
               swnet_sn(i) = sobs(i) !(swdir_s(i) + swdifd_s(i))  - swdifu_s(i)
 
-              ! Distribute absorbed short wave radiation across layers
-              ! -----------------------------------
-
-              !IF(top(i) .GE. 1) THEN ! sufficient snow cover
-
-              !  !$acc loop seq
-              !  tbloop: DO ksn = top(i), 1, -1
-              !           k_ext = ( rho_sn(i,ksn) / 3.0_vpp ) + 50.0_vpp
-              !           swabs_sn(i,ksn) = swnet_sn(i) * (1.0_vpp - exp(-k_ext * dzm_sn_now(i,ksn)))
-              !           swnet_sn(i) = swnet_sn(i) - swabs_sn(i,ksn)
-!
- !                        if( swnet_sn(i) .le. 0.0_vpp ) exit tbloop
- !               end do tbloop
-!
-!                   ! Put the remaining energy into the bottom layer
-!                   IF(swnet_sn(i) .gt.  0.0_vpp) THEN
-!                     swabs_sn(i,1) = swabs_sn(i,1) + swnet_sn(i)
-!                   ENDIF
-!              ENDIF
-
-              ! Calculate total atmospheric forcing
-              ! ------------------------------------
- 
-!              for_sn(i)  = swabs_sn(i,top(i)) + (lwd_s(i) - lwu_s(i)) + lh_sn(i) + sh_sn(i)
-!               for_sn(i)  = swabs_sn(i,top(i)) + thbs(i) + lh_sn(i) + sh_sn(i)
-                for_sn(i)  = sobs(i) + thbs(i) + lh_sn(i) + sh_sn(i)
+              for_sn(i)  = sobs(i) + lh_sn(i) ! not taken into linearized boundary conditions
 
              ENDIF
            ENDDO
-          !$acc end parallel
 
   ! ----------------------------------------------------------------------------
   ! + Solve the heat equation
   ! ----------------------------------------------------------------------------
 
-     ! ---------------------
-     ! Prepare soil properties
-     ! ---------------------
 
-     ! Initiations
-     ! ------------------
-
-     !$acc parallel async
-     !$acc loop gang vector private(mstyp)
-     DO i = ivstart, ivend
-     
-       mstyp     = soiltyp_subs(i)        ! soil type
-
-       zrocg     (i,:) = crhoc (mstyp)              ! heat capacity
-       zrocg_soil(i,:) = crhoc (mstyp)              ! heat capacity
-       zalam     (i,:) = cala0 (mstyp)              ! heat conductivity parameter
-       
-       zporv     (i,:) = cporv (mstyp)              ! pore volume
-       zfcap     (i,:) = cfcap (mstyp)              ! field capacity     
-       zpwp      (i,:) = cpwp  (mstyp)              ! plant wilting point
-       zdlam     (i)   = cala1 (mstyp)-cala0(mstyp) ! heat conductivity parameter
-     ENDDO
-     !$acc end parallel
-
-    
-     ! Heat conductivity; NOTE: This is currently only itype_heatcond == 1
-     ! -------------------
-
-     !$acc parallel async
-     !$acc loop gang vector collapse(2)
-     DO kso = 1, ke_soil
-       DO i = ivstart, ivend
-         zwqg         = 0.5_vpp*(zfcap(i,kso) + zpwp(i,kso))
-         z4wdpv       = 4.0_vpp*zwqg/zporv(i,kso)
-         ! heat conductivity
-         zalamtmp(i,kso) =              zdlam(i)                         &
-                               * (0.25_vpp + 0.30_vpp*zdlam(i)           &
-                               / (1.0_vpp+0.75_vpp*zdlam(i)))            &
-                               * MIN (z4wdpv, 1.0_vpp + (z4wdpv-1.0_vpp) &
-                               *(1.0_vpp+0.35_vpp*zdlam(i))              &
-                               /(1.0_vpp+1.95_vpp*zdlam(i)))
-       ENDDO
-     ENDDO
-      !$acc end parallel
-
-
-     !$acc parallel async
-     !$acc loop gang vector collapse(2)
-     DO kso = 1, ke_soil
-       DO i = ivstart, ivend
-         zalam(i,kso) = zalam(i,kso) + zalamtmp(i,kso)
-         hzalam(i,kso) = zalam(i,kso)
-       ENDDO
-     ENDDO
-     !$acc end parallel
-
-     ! Heat capacity
-     ! -------------------
-
-     !$acc parallel async
-     !$acc loop gang vector
-     DO i = ivstart, ivend
-       zw_fr  (i,ke_soil+1)  = w_so_now(i,ke_soil+1)/zdzhs(ke_soil+1)
-     ENDDO
-     !$acc end parallel
-
-     ! REORDER
-     !$acc parallel async
-     !$acc loop gang vector collapse(2)
-     DO kso   = 1, ke_soil
-       DO i = ivstart, ivend
-         zw_fr   (i,kso)     = w_so_now(i,kso)/zdzhs(kso)
-       ENDDO
-     ENDDO
-     !$acc end parallel
-
-     !$acc parallel async
-     !$acc loop gang vector collapse(2) private(zzz)
-     DO kso = 1, ke_soil
-       DO i = ivstart, ivend
-
-         ! Scale soil heat capacity with organic fraction -> Chadburn et al., 2015
-         IF (zmls(kso) < rootdp(i)) THEN
-           zzz = plcov(i)*(rootdp(i)-zmls(kso))/rootdp(i)
-           zrocg(i,kso)=(1.0_vpp-zzz)*zrocg_soil(i,kso)+zzz*0.58E+06_vpp
-         END IF
-
-       ENDDO
-     ENDDO
-     !$acc end parallel
-
-     
-     !$acc parallel async
-     !$acc loop seq
-     DO   kso = 1,ke_soil+1
-       !$acc loop gang vector
-       DO i = ivstart, ivend
-         ziw_fr(i,kso) = w_so_ice_now(i,kso)/zdzhs(kso)                            ! ice frac.
-
-         zlw_fr(i,kso) = zw_fr(i,kso) - ziw_fr(i,kso)                              ! liquid water frac.
-
-         zroc(i,kso)   = zrocg(i,kso) + rho_w*zlw_fr(i,kso)*chc_w +          &     ! soil  heat capacity
-                                        rho_w*ziw_fr(i,kso)*chc_i
-        END DO
-      END DO      !soil layers
-      !$acc end parallel
-
-
-     ! --------------------
-     ! Call the solver
-     ! ---------------------
-
-     !$acc parallel async
-     !$acc loop gang vector private(zm,hcon,hcap,hdif,rho,t_sol,sw_abs,alpha,gamma_sol,a,b,c,d,e,l_top,counter)
      DO i = ivstart, ivend
 
        l_top = top(i)
 
+       lower_bc = t_so_new(i,0)
        IF(l_top .GT. 1) THEN  !!!snow on the ground
 
 
-  counter = 0
-  DO ksn = l_top+1,1
-    counter = counter+1
+       counter = 0
+       DO ksn = l_top+1,1,-1
+          counter = counter+1
 
+          IF(counter .EQ. 1) THEN ! ... top node ! NEUMANN BC
 
+            alpha_solver_up   = dzm_sn_now(i,ksn-1) / ( 6.0_vpp * dt )
+            beta_solver_up    = ( hcon_sn(i,ksn-1) / ( rho_sn(i,ksn-1)*hcap_sn(i,ksn-1) ) ) * (1.0_vpp/dzm_sn_now(i,ksn-1))
+        
+            a_matrix(counter)     =  0.0_vpp
+            b_matrix(counter)     =  2.0_vpp * alpha_solver_up + beta_solver_up + & 
+&                                    tch_sn(i) + delta_rad(i)
 
-    IF(counter .EQ. 1) THEN ! ... top layer
-
-      alpha_solver_up   = dzm_sn_now(i,ksn-1) / ( 6.0_vpp * dt )
-      beta_solver_up    = ( hcon_sn(i,ksn-1) / ( rho_sn(i,ksn-1)*hcap_sn(i,ksn-1) ) ) * (1.0_vpp/dzm_sn_now(i,ksn-1))
-
-      a(counter)     =  0.0_vpp
-      b(counter)     =  2.0 * alpha_solver_up + beta_solver_up
-      c(counter)     =  alpha_solver_up - beta_solver_up
-
-      d(counter)     =  2.0_vpp * alpha_solver_up * t_sn_now(i,ksn) + alpha_solver_up * t_sn_now(i,ksn-1)
-
-    ELSEIF (counter .EQ. l_top) THEN ! ... Bottom layer
-
-        a(counter) = 0.0_vpp
-        b(counter) = 1.0_vpp
-        c(counter) = 0.0_vpp
+            c_matrix(counter)     =  alpha_solver_up - beta_solver_up
  
-        d(counter) = lower_bc  
+            d_matrix(counter)     =  2.0_vpp * alpha_solver_up * t_sn_now(i,ksn) + alpha_solver_up * t_sn_now(i,ksn-1) + &
+&                                    tch_sn(i) * t(i) + &
+&                                    delta_rad(i) * t(i)
 
-    ELSE  ! Middle layers
+          ELSEIF (counter .EQ. l_top) THEN ! ... bottom node ! Dirichlet BC
 
-        alpha_solver_up  = dzm_sn_now(i,ksn) / ( 6.0_vpp * dt )
-        beta_solver_up   = ( hcon_sn(i,ksn) / ( rho_sn(i,ksn)*hcap_sn(i,ksn) ) ) * (1.0_vpp/dzm_sn_now(i,ksn))
+            a_matrix(counter) = 0.0_vpp
+            b_matrix(counter) = 1.0_vpp
+            c_matrix(counter) = 0.0_vpp
+ 
+            d_matrix(counter) = lower_bc  
 
-        alpha_solver_down = dzm_sn_now(i,ksn-1) / ( 6.0_vpp * dt )
-        beta_solver_down  = ( hcon_sn(i,ksn-1) / ( rho_sn(i,ksn-1)*hcap_sn(i,ksn-1) ) ) * (1.0_vpp/dzm_sn_now(i,ksn-1))
+          ELSE  ! Middle nodes
 
-        a(counter) = alpha_solver_up - beta_solver_up 
-        b(counter) = 2.0_vpp * (alpha_solver_up + alpha_solver_down) + beta_solver_up + beta_solver_down 
-        c(counter) = alpha_solver_down - beta_solver_down
+            alpha_solver_up  = dzm_sn_now(i,ksn) / ( 6.0_vpp * dt )
+            beta_solver_up   = ( hcon_sn(i,ksn) / ( rho_sn(i,ksn)*hcap_sn(i,ksn) ) ) * (1.0_vpp/dzm_sn_now(i,ksn))
 
-        d(counter) = alpha_solver_up * t_sn_now(i,ksn+1) + 
-                     2.0_vpp * (alpha_solver_up + alpha_solver_down) * t_sn_now(i,ksn) +
-                     alpha_solver_down * t_sn_now(i,ksn-1)
+            alpha_solver_down = dzm_sn_now(i,ksn-1) / ( 6.0_vpp * dt )
+            beta_solver_down  = ( hcon_sn(i,ksn-1) / ( rho_sn(i,ksn-1)*hcap_sn(i,ksn-1) ) ) * (1.0_vpp/dzm_sn_now(i,ksn-1))
+
+            a_matrix(counter) = alpha_solver_up - beta_solver_up 
+            b_matrix(counter) = 2.0_vpp * (alpha_solver_up + alpha_solver_down) + beta_solver_up + beta_solver_down 
+            c_matrix(counter) = alpha_solver_down - beta_solver_down
+
+            d_matrix(counter) = alpha_solver_up * t_sn_now(i,ksn+1) +  & 
+&                                2.0_vpp * (alpha_solver_up + alpha_solver_down) * t_sn_now(i,ksn) + &
+&                                alpha_solver_down * t_sn_now(i,ksn-1)
+
+          ENDIF ! if block for splitting between top, middle and bottom nodes
+       ENDDO
+
+       ! ------------------------------------------------------------
+       ! Solve the system - Thomas Algorithm
+       ! ------------------------------------------------------------
+
+       ! step 1: forward elimination
+       do ksn=2,l_top
+         coeff  = a_matrix(ksn)/b_matrix(ksn-1)
+         b_matrix(ksn) = b_matrix(ksn) - coeff * c_matrix(ksn-1)
+         d_matrix(ksn) = d_matrix(ksn) - coeff * d_matrix(ksn-1)
+      enddo
+
+      ! step 2: back substitution
+      t_sn_new(i,l_top) = d_matrix(l_top)/b_matrix(l_top)
+  
+      do ksn=l_top-1,1,-1
+         t_sn_new(i,ksn) = (d_matrix(ksn) - c_matrix(ksn) * t_sn_new(i,ksn))/b_matrix(ksn)
+      enddo
 
 
-    ENDIF
-
-  ENDDO
-
-  ! ------------------------------------------------------------
-  ! Solve the system - Thomas Algorithm
-  ! ------------------------------------------------------------
-
-
-   ! ------------------------------------------------------------
-   ! Do some updating required for the next sections
-   ! ------------------------------------------------------------
-   ! Snow Surface Temperature
-
-
-       ENDIF
-
+       ENDIF ! if block for snow or no snow
      ENDDO
-     !$acc end parallel
 
 ! =============================================================================
 ! + End Section II: Atmospheric forcing & Heat Equation
 ! =============================================================================
 
-!if(ntstep .eq. N_IMP) then
-   do ksn = 1,top(1)
-!     write(*,*) 'end section II: ',ksn,theta_i_now(1,ksn),theta_a_now(1,ksn),theta_w_now(1,ksn),t_sn_now(1,ksn),dzm_sn_now(1,ksn)
-   enddo
-!endif
-l_hsnow = 0.0
-l_mass  = 0.0
-   do ksn = 1,top(1)
-!     write(*,*) 'end section I: ',iblock,ksn,theta_i_now(1,ksn),theta_a_now(1,ksn),theta_w_now(1,ksn),t_sn_now(1,ksn)
-      l_hsnow = l_hsnow + dzm_sn_now(1,ksn)
-      l_mass = l_mass + dzm_sn_now(1,ksn)*rho_sn(1,ksn)
-   enddo
-   write(*,'(A20,I6,6F28.16)'   ) 'end section II: ',ntstep, l_hsnow,l_mass,sobs(1),thbs(1),lh_sn(1),sh_sn(1)
 
+!! updating element properties
+   DO i = ivstart, ivend
 
+     l_top = top(i)
+     IF(l_top .GE. 1) THEN
 
-!if (mod(ntstep,30) .eq. 0) then 
+         theta_a_now(i,:) = max(0.0_vpp,1.0_vpp - theta_i_now(i,:) - theta_w_now(i,:))
+
+         ! --------------------------
+         ! Snow layer density
+         ! -------------------------
+         do ksn = 1, l_top, 1
+            if(theta_i_now(i,ksn) .eq. 0.0_vpp) then
+               rho_sn(i,ksn) = 0.0_vpp
+            else
+               rho_sn(i,ksn) = theta_i_now(i,ksn)*rho_i + theta_w_now(i,ksn)*rho_w
+            endif
+         enddo
+         
+         ! --------------------------
+         ! Heat capacity
+         ! --------------------------
+         do ksn = 1, l_top, 1
+             if(rho_sn(i,ksn) .LT. eps) then
+               hcap_sn(i,ksn) = 0.0_vpp
+             else
+               hcap_sn(i,ksn) = (  rho_a   * theta_a_now(i,ksn) * specific_heat_air     &
+                                 + rho_i   * theta_i_now(i,ksn) * specific_heat_ice     &
+                                 + rho_w   * theta_w_now(i,ksn) * specific_heat_water)  &
+                                  / rho_sn(i,ksn)
+             endif
+         enddo
+
+         ! --------------------------
+         ! Heat conductivity
+         ! --------------------------
+         do ksn = 1, l_top, 1
+             hcon_sn(i,ksn) = 2.22_vpp * EXP(1.88_vpp * LOG(rho_sn(i,ksn)/rho_i))
+         enddo
+
+     ENDIF ! if (l_top .ge. 1) 
+   ENDDO ! loop over grid points
+
+!!! ENDING UPDATING ELEMENT PROPERTIES
+
 
 ! =============================================================================
 ! + Begin Section III: Phase Changes
@@ -1615,23 +918,16 @@ l_mass  = 0.0
     ! Keep old values
     ! -----------------
 
-    !$acc parallel async default(none)
-    !$acc loop seq
     DO ksn = 1, ke_snow, 1
-      !$acc loop gang vector
        DO i = ivstart, ivend
-         zm_sn_old(i,ksn)   = zm_sn(i,ksn)
          theta_i_old(i,ksn) = theta_i_now(i,ksn)
          theta_w_old(i,ksn) = theta_w_now(i,ksn)
        ENDDO
     ENDDO
-    !$acc end parallel
     
     ! Initiate phase change
     ! -------------------
 
-    !$acc parallel async
-    !$acc loop gang vector private(l_top)
     DO i = ivstart, ivend
       l_top = top(i)
       IF(l_top .GE. 1) THEN ! snow on the ground
@@ -1640,25 +936,22 @@ l_mass  = 0.0
         freeze_flag(i) = .FALSE.
         DO ksn = l_top, 1, -1
            ! Metling
-           IF(t_sn_now(i,ksn) .GT. t0_melt .AND. theta_i_now(i,ksn) .GT. eps2) THEN
+           IF(t_sn_elem(i,ksn) .GT. t0_melt .AND. theta_i_now(i,ksn) .GT. eps2) THEN
                 melt_flag(i) = .TRUE.
            ENDIF
            ! Freezing
-           IF(t_sn_now(i,ksn) .LT. t0_melt .AND. theta_w_now(i,ksn) .GT. (theta_r + eps2)) THEN
+           IF(t_sn_elem(i,ksn) .LT. t0_melt .AND. theta_w_now(i,ksn) .GT. (theta_r + eps2)) THEN
                 freeze_flag(i) = .TRUE.
            ENDIF
            !write(*,*) 'melt: ',ksn,melt_flag(i),freeze_flag(i)
         ENDDO  !end of snow layers
       ENDIF
     ENDDO
-    !$acc end parallel 
 
 
     ! Check for melting
     ! --------------------
     
-    !$acc parallel async
-    !$acc loop gang vector private(l_top)
     DO i = ivstart, ivend
        l_top = top(i)
        IF(l_top .GE. 1) THEN ! snow on the ground
@@ -1676,13 +969,13 @@ l_mass  = 0.0
                 ! --------------------
                 !write(*,*) 'melting: ',ntstep,ksn,q_rest
                
-                IF(t_sn_now(i,ksn) .GE. t0_melt .AND. theta_i_now(i,ksn) .GT. 0.0_vpp .AND. theta_w_now(i,ksn) .LT. theta_s) THEN
+                IF(t_sn_elem(i,ksn) .GE. t0_melt .AND. theta_i_now(i,ksn) .GT. 0.0_vpp .AND. theta_w_now(i,ksn) .LT. theta_s) THEN
             
 
  
                   ! difference dT between actual melting temperature and layer temperature
                   dT_sub_melt = 0.0_vpp
-                  dT_sub_melt = t0_melt - t_sn_now(i,ksn)
+                  dT_sub_melt = t0_melt - t_sn_elem(i,ksn)
                   
                   ! --------------------
                   ! Now we take into account that there might be some extra energy that could
@@ -1726,13 +1019,13 @@ l_mass  = 0.0
                     ! Reset/Recalculate properties
                     ! --------------------
                      ! Layer temperature and transfered energy
-                     t_sn_now(i,ksn) = t_sn_now(i,ksn) + dT_sub_melt
-                     IF(t_sn_now(i,ksn) .LE. t0_melt) THEN ! if melting occured it can only be at melt point
+                     t_sn_elem(i,ksn) = t_sn_elem(i,ksn) + dT_sub_melt
+                     IF(t_sn_elem(i,ksn) .LE. t0_melt) THEN ! if melting occured it can only be at melt point
                        q_rest     = 0.0_vpp
-                       t_sn_now(i,ksn)  = t0_melt
+                       t_sn_elem(i,ksn)  = t0_melt
                      ELSE
-                       q_rest = hcap_sn(i,ksn) * rho_sn(i,ksn) * dzm_sn_now(i,ksn) * (t_sn_now(i,ksn) - t0_melt)
-                       t_sn_now(i,ksn)   = t0_melt
+                       q_rest = hcap_sn(i,ksn) * rho_sn(i,ksn) * dzm_sn_now(i,ksn) * (t_sn_elem(i,ksn) - t0_melt)
+                       t_sn_elem(i,ksn)   = t0_melt
                      ENDIF
                      ! Volumetric freezing power
                      q_mf     = q_mf + ((dtheta_i * rho_i * lh_f) / (dt ) )
@@ -1746,36 +1039,14 @@ l_mass  = 0.0
                  ENDIF ! end melt check
            ENDDO ! loop over snow layers
 
-           ! Update dependent variables
-           !CALL update(top(i), hm_sn(i,:), zm_sn(i,:), dzm_sn_now(i,:), m_sn(i,:)          , &
-           !            theta_i_now(i,:), theta_w_now(i,:), theta_a_now(i,:), rho_sn(i,:)   , &
-           !            hcap_sn(i,:), hcon_sn(i,:))
 
-           ! -------------------------
-           ! Height of snow (main) levels
-           ! -------------------------
-                 !$acc loop seq
-                 do ksn=1,l_top
-                    if(ksn .eq. 1) then
-                       hm_sn(i,ksn) = dzm_sn_now(i,ksn)
-                    else
-                       hm_sn(i,ksn) = hm_sn(i,ksn-1) + dzm_sn_now(i,ksn)
-                    endif
-                 enddo  
-         
-           ! --------------------------
-           ! Depth of snow layer (main) levels
-           ! -------------------------
-                 !$acc loop seq
                  do ksn = l_top,1,-1
-                    zm_sn(i, (l_top+1) - ksn ) = hm_sn(i,ksn) !invert height vector
                     theta_a_now(i,ksn) = max(0.0_vpp,1.0_vpp - theta_i_now(i,ksn) - theta_w_now(i,ksn))
                  enddo
          
            ! --------------------------
            ! Snow layer density
            ! -------------------------
-                  !$acc loop seq
                   do ksn = 1, l_top, 1
                      if(theta_i_now(i,ksn) .eq. 0.0_vpp) then
                         rho_sn(i,ksn) = 0.0_vpp
@@ -1787,7 +1058,6 @@ l_mass  = 0.0
            ! --------------------------
            ! Heat capacity
            ! --------------------------
-                 !$acc loop seq
                  DO ksn = 1, l_top, 1
                      IF(rho_sn(i,ksn) .LT. eps) THEN
                        hcap_sn(i,ksn) = 0.0_vpp
@@ -1802,49 +1072,31 @@ l_mass  = 0.0
            ! --------------------------
            ! Heat conductivity
            ! --------------------------
-                !$acc loop seq
                 DO ksn = 1, l_top, 1
                    hcon_sn(i,ksn) = 2.22_vpp * EXP(1.88_vpp * LOG(rho_sn(i,ksn)/rho_i))
                 ENDDO
          
-           ! --------------------------
-           ! Snow layer mass
-           ! --------------------------
-               !$acc loop seq
-               DO ksn = 1, l_top, 1
-                 IF(ksn .EQ. 1) THEN
-                    m_sn(i,ksn) = zm_sn(i,ksn) * ((theta_i_now(i,ksn) * rho_i) + (theta_w_now(i,ksn) * rho_w))
-                  ELSE
-                    m_sn(i,ksn) = ABS(zm_sn(i,ksn) - zm_sn(i,ksn-1))  * ((theta_i_now(i,ksn) * rho_i) + (theta_w_now(i,ksn) * rho_w))
-                  ENDIF
-               ENDDO
-         
+        
           ENDIF ! end check in melt or not
        ENDIF ! end check if top .ge. 1
      ENDDO ! end loop over horizontal pixels
-     !$acc end parallel
 
 
      ! Check for freezing
      ! --------------------
 
-     !$acc parallel async
-     !$acc loop gang vector
      DO i = ivstart, ivend
        l_top = top(i)
        IF(l_top .GE. 1) THEN ! snow on the ground
          IF(freeze_flag(i)) THEN ! freeze
 
-           !CALL freeze_snow(zm_sn(i,:), dzm_sn_now(i,:), t_sn_now(i,:), hcap_sn(i,:)  , &
-           !                 theta_i_now(i,:), theta_w_now(i,:), theta_a_now(i,:)        , &
-           !                 rho_sn(i,:), top(i))
            DO  ksn = l_top, 1, -1
               ! Freezing within the snowpack can occur if (1) the temperature of the
               ! element is below freezing and if water is present to be refrozen
-              IF(t_sn_now(i,ksn) .LT. t0_melt .AND. theta_w_now(i,ksn) .GT. theta_r) THEN
+              IF(t_sn_elem(i,ksn) .LT. t0_melt .AND. theta_w_now(i,ksn) .GT. theta_r) THEN
                 ! difference dT between actual layer temperature and freezing temperature
                 dT_sub_melt = 0.0_vpp
-                dT_sub_melt = t0_melt - t_sn_now(i,ksn)
+                dT_sub_melt = t0_melt - t_sn_elem(i,ksn)
                 ! Adapt A_sub_melt to compute mass change
                 A_sub_melt = (hcap_sn(i,ksn) * rho_sn(i,ksn)) / (rho_i * lh_f)
                 ! Compute change in volumetric contenst
@@ -1880,40 +1132,21 @@ l_mass  = 0.0
                 !Compute the volumetric refreezing power
                 q_mf     = q_mf + ((dtheta_i * rho_i * lh_f) /( dt ))
                 dtheta_w = dtheta_w
-                t_sn_now(i,ksn)     = t_sn_now(i,ksn) + dT_sub_melt
+                t_sn_elem(i,ksn)     = t_sn_elem(i,ksn) + dT_sub_melt
              ENDIF
            ENDDO
  
-           ! Update dependent variables
-!           CALL update(top(i), hm_sn(i,:), zm_sn(i,:), dzm_sn_now(i,:), m_sn(i,:)          , &
-!                       theta_i_now(i,:), theta_w_now(i,:), theta_a_now(i,:), rho_sn(i,:)   , &
-!                       hcap_sn(i,:), hcon_sn(i,:))
 
-           ! -------------------------
-           ! Height of snow (main) levels
-           ! -------------------------
-                 !$acc loop seq
-                 do ksn=1,l_top
-                    if(ksn .eq. 1) then
-                       hm_sn(i,ksn) = dzm_sn_now(i,ksn)
-                    else
-                       hm_sn(i,ksn) = hm_sn(i,ksn-1) + dzm_sn_now(i,ksn)
-                    endif
-                 enddo  
-         
            ! --------------------------
            ! Depth of snow layer (main) levels
            ! -------------------------
-                 !$acc loop seq
                  do ksn = l_top,1,-1
-                    zm_sn(i, (l_top+1) - ksn ) = hm_sn(i,ksn) !invert height vector
                     theta_a_now(i,ksn) = max(0.0_vpp,1.0_vpp - theta_i_now(i,ksn) - theta_w_now(i,ksn))
                  enddo
          
            ! --------------------------
            ! Snow layer density
            ! -------------------------
-                  !$acc loop seq
                   do ksn = 1, l_top, 1
                      if(theta_i_now(i,ksn) .eq. 0.0_vpp) then
                         rho_sn(i,ksn) = 0.0_vpp
@@ -1921,65 +1154,14 @@ l_mass  = 0.0
                         rho_sn(i,ksn) = theta_i_now(i,ksn)*rho_i + theta_w_now(i,ksn)*rho_w
                      endif
                   enddo
-                  
-           ! --------------------------
-           ! Heat capacity
-           ! --------------------------
-                 !$acc loop seq
-                 DO ksn = 1, l_top, 1
-                     IF(rho_sn(i,ksn) .LT. eps) THEN
-                       hcap_sn(i,ksn) = 0.0_vpp
-                     ELSE
-                       hcap_sn(i,ksn) = (  rho_a   * theta_a_now(i,ksn) * specific_heat_air     &
-                                         + rho_i   * theta_i_now(i,ksn) * specific_heat_ice     &
-                                         + rho_w   * theta_w_now(i,ksn) * specific_heat_water)  &
-                                          / rho_sn(i,ksn)
-                     ENDIF
-                 ENDDO
          
-           ! --------------------------
-           ! Heat conductivity
-           ! --------------------------
-                !$acc loop seq
-                DO ksn = 1, l_top, 1
-                   hcon_sn(i,ksn) = 2.22_vpp * EXP(1.88_vpp * LOG(rho_sn(i,ksn)/rho_i))
-                ENDDO
-         
-           ! --------------------------
-           ! Snow layer mass
-           ! --------------------------
-               !$acc loop seq
-               DO ksn = 1, l_top, 1
-                 IF(ksn .EQ. 1) THEN
-                    m_sn(i,ksn) = zm_sn(i,ksn) * ((theta_i_now(i,ksn) * rho_i) + (theta_w_now(i,ksn) * rho_w))
-                  ELSE
-                    m_sn(i,ksn) = ABS(zm_sn(i,ksn) - zm_sn(i,ksn-1))  * ((theta_i_now(i,ksn) * rho_i) + (theta_w_now(i,ksn) * rho_w))
-                  ENDIF
-               ENDDO
-
           ENDIF ! if freeze
        ENDIF ! if there is snow or not
      ENDDO ! end loop over horizontal pixels
-     !$acc end parallel
 
 ! =============================================================================
 ! - End Section III: Phase Changes
 ! =============================================================================
-
-!if(ntstep .eq. N_IMP) then
-   do ksn = 1,top(1)
-     !write(*,*) 'end section III (A): ',iblock,ksn,theta_i_now(1,ksn),theta_a_now(1,ksn),theta_w_now(1,ksn),t_sn_now(1,ksn),rho_sn(1,ksn)
-   enddo
-!endif
-l_hsnow = 0.0
-l_mass  = 0.0
-   do ksn = 1,top(1)
-!     write(*,*) 'end section I: ',iblock,ksn,theta_i_now(1,ksn),theta_a_now(1,ksn),theta_w_now(1,ksn),t_sn_now(1,ksn)
-      l_hsnow = l_hsnow + dzm_sn_now(1,ksn)
-      l_mass  = l_mass  + dzm_sn_now(1,ksn) * rho_sn(1,ksn)
-   enddo
-   write(*,'(A20,I6,2F28.16)' ) 'end section III: ',ntstep,l_hsnow,l_mass
-
 
 
 !REAL (KIND = vpp)        :: &
@@ -1994,16 +1176,9 @@ l_mass  = 0.0
 ! + Begin Section IV: Water Transport
 ! =============================================================================
   excess_water=0.0_vpp
-  !$acc parallel async
-  !$acc loop gang vector private(l_top)
   DO i = ivstart, ivend
     l_top = top(i)
     IF(l_top .GE. 1) THEN ! snow on the ground
-
-      ! Compute Sublimation/Deposition/Condensation/Evaporation
-      ! -------------------
-      !CALL phase_change_surface(top(i), lh_sn(i), t_sn_sfc(i), rho_sn(i,:), zdt     , &
-      !                          dzm_sn_now(i,:), theta_i_now(i,:), theta_w_now(i,:)   )
 
       ! Initiate some values
        dL   = 0.0_vpp
@@ -2088,50 +1263,17 @@ l_mass  = 0.0
    ENDIF
   ENDIF
 
-!if(ntstep .eq. N_IMP) then
-   do ksn = 1,top(1)
-!     write(*,*) 'in between section IV (A): ',iblock,ksn,theta_i_now(1,ksn),theta_a_now(1,ksn),theta_w_now(1,ksn),t_sn_now(1,ksn)
-   enddo
-!endif
-l_hsnow = 0.0
-l_mass  = 0.0
-   do ksn = 1,top(1)
-!     write(*,*) 'end section I: ',iblock,ksn,theta_i_now(1,ksn),theta_a_now(1,ksn),theta_w_now(1,ksn),t_sn_now(1,ksn)
-      l_hsnow = l_hsnow + dzm_sn_now(1,ksn)
-      l_mass  = l_mass  + dzm_sn_now(1,ksn)*rho_sn(1,ksn)
-   enddo
-   write(*,'(A20,I6,2F28.16)' ) 'end section IV (A): ',ntstep,l_hsnow,l_mass
-
-      ! Update dependent variables
-      !CALL update(top(i), hm_sn(i,:), zm_sn(i,:), dzm_sn_now(i,:), m_sn(i,:)         , &
-      !            theta_i_now(i,:), theta_w_now(i,:), theta_a_now(i,:),rho_sn(i,:)   , &
-      !            hcap_sn(i,:), hcon_sn(i,:))
-
-           ! -------------------------
-           ! Height of snow (main) levels
-           ! -------------------------
-                 !$acc loop seq
-                 do ksn=1,l_top
-                    if(ksn .eq. 1) then
-                       hm_sn(i,ksn) = dzm_sn_now(i,ksn)
-                    else
-                       hm_sn(i,ksn) = hm_sn(i,ksn-1) + dzm_sn_now(i,ksn)
-                    endif
-                 enddo  
          
            ! --------------------------
            ! Depth of snow layer (main) levels
            ! -------------------------
-                 !$acc loop seq
                  do ksn = l_top,1,-1
-                    zm_sn(i, (l_top+1) - ksn ) = hm_sn(i,ksn) !invert height vector
                     theta_a_now(i,ksn) = max(0.0_vpp,1.0_vpp - theta_i_now(i,ksn) - theta_w_now(i,ksn))
                  enddo
          
            ! --------------------------
            ! Snow layer density
            ! -------------------------
-                  !$acc loop seq
                   do ksn = 1, l_top, 1
                      if(theta_i_now(i,ksn) .eq. 0.0_vpp) then
                         rho_sn(i,ksn) = 0.0_vpp
@@ -2143,7 +1285,6 @@ l_mass  = 0.0
            ! --------------------------
            ! Heat capacity
            ! --------------------------
-                  !$acc loop seq
                   DO ksn = 1, l_top, 1
                       IF(rho_sn(i,ksn) .LT. eps) THEN
                         hcap_sn(i,ksn) = 0.0_vpp
@@ -2158,39 +1299,15 @@ l_mass  = 0.0
            ! --------------------------
            ! Heat conductivity
            ! --------------------------
-                 !$acc loop seq
                  DO ksn = 1, l_top, 1
                     hcon_sn(i,ksn) = 2.22_vpp * EXP(1.88_vpp * LOG(rho_sn(i,ksn)/rho_i))
                  ENDDO
          
-           ! --------------------------
-           ! Snow layer mass
-           ! --------------------------
-                 !$acc loop seq
-                 DO ksn = 1, l_top, 1
-                   IF(ksn .EQ. 1) THEN
-                      m_sn(i,ksn) = zm_sn(i,ksn) * ((theta_i_now(i,ksn) * rho_i) + (theta_w_now(i,ksn) * rho_w))
-                    ELSE
-                      m_sn(i,ksn) = ABS(zm_sn(i,ksn) - zm_sn(i,ksn-1))  * ((theta_i_now(i,ksn) * rho_i) + (theta_w_now(i,ksn) * rho_w))
-                    ENDIF
-                 ENDDO
-
-
-      ! Rain on snow
-      ! -------------------
-
-        ! Note: This still needs to be integrated. Simply use zrain_rate and put
-        ! it in the top layer. We also would need to put the energy as an
-        ! additional source into the solver for the heat equation or in the
-        ! forcing directly.
 
       ! -------------------
       ! Transport the water
       ! -------------------
 
-      ! CALL transport_water(zm_sn(i,:), dzm_sn_now(i,:), t_sn_now(i,:), rho_sn(i,:),   &
-      !                      theta_i_now(i,:), theta_a_now(i,:), theta_w_now(i,:),      &
-      !                      hcap_sn(i,:), top(i), runoff_sn(i))
       frac_rho      = rho_w/rho_i
       limit_theta_i =   1.0_vpp - frac_rho * ((1.0_vpp + 0.0165_vpp * frac_rho)                   &
                       - SQRT((1.0_vpp + 0.0165_vpp * frac_rho)*(1.0_vpp + 0.0165_vpp * frac_rho)  &
@@ -2202,7 +1319,7 @@ l_mass  = 0.0
       DO ksn = 1, l_top, 1
         ! Determine the additional storage capacity (of water) due to refreezing
         ! --------------------------
-         dtheta_w_sub_wtr(ksn) = (hcap_sn(i,ksn) * rho_sn(i,ksn)) * (1.0 / lh_f ) * (1.0 / rho_w)  * MAX(0.0_vpp, (t0_melt - t_sn_now(i,ksn)))
+         dtheta_w_sub_wtr(ksn) = (hcap_sn(i,ksn) * rho_sn(i,ksn)) * (1.0 / lh_f ) * (1.0 / rho_w)  * MAX(0.0_vpp, (t0_melt - t_sn_elem(i,ksn)))
         ! --------------------------
         ! Estimate resiudal water (RWC) content by volume; Coleou and Lesaffre, 1998,
         ! Ann. Glaciol., 26, 64-68
@@ -2306,36 +1423,16 @@ l_mass  = 0.0
          runoff_sn(i)              = runoff_sn(i) + excess_water +  dzm_sn_now(i,1) * (theta_w_bot - w_res(1))
         ENDIF
    
-       ! Update dependent variables
-       !CALL update(top(i), hm_sn(i,:), zm_sn(i,:), dzm_sn_now(i,:), m_sn(i,:)         , &
-       !            theta_i_now(i,:), theta_w_now(i,:), theta_a_now(i,:),rho_sn(i,:)   , &
-       !            hcap_sn(i,:), hcon_sn(i,:))
-
-           ! -------------------------
-           ! Height of snow (main) levels
-           ! -------------------------
-                 !$acc loop seq
-                 do ksn=1,l_top
-                    if(ksn .eq. 1) then
-                       hm_sn(i,ksn) = dzm_sn_now(i,ksn)
-                    else
-                       hm_sn(i,ksn) = hm_sn(i,ksn-1) + dzm_sn_now(i,ksn)
-                    endif
-                 enddo  
-         
            ! --------------------------
            ! Depth of snow layer (main) levels
            ! -------------------------
-                 !$acc loop seq
                  do ksn = l_top,1,-1
-                    zm_sn(i, (l_top+1) - ksn ) = hm_sn(i,ksn) !invert height vector
                     theta_a_now(i,ksn) = max(0.0_vpp,1.0_vpp - theta_i_now(i,ksn) - theta_w_now(i,ksn))
                  enddo
          
            ! --------------------------
            ! Snow layer density
            ! -------------------------
-                  !$acc loop seq
                   do ksn = 1, l_top, 1
                      if(theta_i_now(i,ksn) .eq. 0.0_vpp) then
                         rho_sn(i,ksn) = 0.0_vpp
@@ -2344,293 +1441,26 @@ l_mass  = 0.0
                      endif
                   enddo
                   
-           ! --------------------------
-           ! Heat capacity
-           ! --------------------------
-                 !$acc loop seq
-                 DO ksn = 1, l_top, 1
-                     IF(rho_sn(i,ksn) .LT. eps) THEN
-                       hcap_sn(i,ksn) = 0.0_vpp
-                     ELSE
-                       hcap_sn(i,ksn) = (  rho_a   * theta_a_now(i,ksn) * specific_heat_air     &
-                                         + rho_i   * theta_i_now(i,ksn) * specific_heat_ice     &
-                                         + rho_w   * theta_w_now(i,ksn) * specific_heat_water)  &
-                                          / rho_sn(i,ksn)
-                     ENDIF
-                 ENDDO
-         
-           ! --------------------------
-           ! Heat conductivity
-           ! --------------------------
-                !$acc loop seq
-                DO ksn = 1, l_top, 1
-                   hcon_sn(i,ksn) = 2.22_vpp * EXP(1.88_vpp * LOG(rho_sn(i,ksn)/rho_i))
-                ENDDO
-         
-           ! --------------------------
-           ! Snow layer mass
-           ! --------------------------
-               !$acc loop seq
-               DO ksn = 1, l_top, 1
-                 IF(ksn .EQ. 1) THEN
-                    m_sn(i,ksn) = zm_sn(i,ksn) * ((theta_i_now(i,ksn) * rho_i) + (theta_w_now(i,ksn) * rho_w))
-                  ELSE
-                    m_sn(i,ksn) = ABS(zm_sn(i,ksn) - zm_sn(i,ksn-1))  * ((theta_i_now(i,ksn) * rho_i) + (theta_w_now(i,ksn) * rho_w))
-                  ENDIF
-               ENDDO
-
     ENDIF
 
 
   ENDDO ! loop over horizontal pixels i=ivstart,ivend
-  !$acc end parallel
 
 ! =============================================================================
 ! - End Section IV: Water transport
 ! =============================================================================
 
-!if(ntstep .eq. N_IMP) then
-   do ksn = 1,top(1)
-     !write(*,*) 'end section IV: ',iblock,ksn,theta_i_now(1,ksn),theta_a_now(1,ksn),theta_w_now(1,ksn),t_sn_now(1,ksn),rho_sn(1,ksn)
-   enddo
-!endif
-
-l_hsnow = 0.0
-l_mass  = 0.0
-   do ksn = 1,top(1)
-!     write(*,*) 'end section I: ',iblock,ksn,theta_i_now(1,ksn),theta_a_now(1,ksn),theta_w_now(1,ksn),t_sn_now(1,ksn)
-      l_hsnow = l_hsnow + dzm_sn_now(1,ksn)
-      l_mass  = l_mass  + dzm_sn_now(1,ksn) * rho_sn(1,ksn)
-   enddo
-   write(*,'(A20,I6,2F28.16)' ) 'end section IV: ',ntstep,l_hsnow,l_mass
-
 ! =============================================================================
 ! + Begin Section V: Settling
 ! =============================================================================
 
-  ! Check for layers that have been melted during phase change and take action
-  ! -----------------------------------------------
-
-  !$acc parallel async
-  !$acc loop gang vector
-  DO i = ivstart, ivend
-    l_top = top(i)
-    IF(l_top .GE. 2) THEN ! snow on the ground
-
-      ! Aggregate layers if possible
-      ! -------------------
-  
-       DO ksn = l_top, 2, -1
-         IF(dzm_sn_now(i,ksn) .LT. min_height_layer .OR. theta_i_now(i,ksn) .LT. 0.01_vpp) THEN ! layer is quite thin
-  
-            ! -------------------
-            ! Aggregate with lower layer - Adjust properties
-            ! -------------------
-             theta_i_now(i,ksn-1) = (theta_i_now(i,ksn)*dzm_sn_now(i,ksn)                                      &
-                            + theta_i_now(i,ksn-1)*dzm_sn_now(i,ksn-1)) / (dzm_sn_now(i,ksn) + dzm_sn_now(i,ksn-1))  ! volumetric ice content
-  
-             theta_w_now(i,ksn-1) = (theta_w_now(i,ksn)*dzm_sn_now(i,ksn)                                      &
-                            + theta_w_now(i,ksn-1)*dzm_sn_now(i,ksn-1)) / (dzm_sn_now(i,ksn) + dzm_sn_now(i,ksn-1))  ! volumetric water content
-
-
-             theta_i_old(i,ksn-1) = (theta_i_old(i,ksn)*dzm_sn_now(i,ksn)                                      &
-                            + theta_i_old(i,ksn-1)*dzm_sn_now(i,ksn-1)) / (dzm_sn_now(i,ksn) + dzm_sn_now(i,ksn-1))  ! volumetric ice content
-            
-             t_sn_now(i,ksn-1) = (t_sn_now(i,ksn)*dzm_sn_now(i,ksn)                                      &
-                            + t_sn_now(i,ksn-1)*dzm_sn_now(i,ksn-1)) / (dzm_sn_now(i,ksn) + dzm_sn_now(i,ksn-1))  ! volumetric ice content
-             
-  
-             dzm_sn_now(i,ksn-1)  = dzm_sn_now(i,ksn) + dzm_sn_now(i,ksn-1)        ! layer thickness
- 
-            ! ... and reset roperties
-             hm_sn(i,ksn)   = 0.0_vpp
-             zm_sn(i,ksn)   = 0.0_vpp
-             dzm_sn_now(i,ksn)  = 0.0_vpp
-  
-             theta_i_now(i,ksn) = 0.0_vpp
-             theta_w_now(i,ksn) = 0.0_vpp
-             theta_a_now(i,ksn) = 0.0_vpp
-  
-             rho_sn(i,ksn)  = 0.0_vpp
-             t_sn_now(i,ksn)    = 0.0_vpp
-             m_sn(i,ksn)    = 0.0_vpp
-  
-             hcap_sn(i,ksn) = 0.0_vpp
-             hcon_sn(i,ksn) = 0.0_vpp
-             hdif_sn(i,ksn) = 0.0_vpp
-        
-             theta_i_old(i,ksn) = 0.0_vpp
-
-  
-         ENDIF
-       ENDDO
- 
-       j=0
-       do lay=1,l_top
-          !if( (dzm_sn_now(i,lay) .gt. min_height_layer) .and. (theta_i_now(i,lay) .gt. 0.01_vpp) ) then
-           if((theta_i_now(i,lay) .gt. 0.01_vpp) ) then
-
-             j=j+1
-             dzm_sn_now(i,j) = dzm_sn_now(i,lay)
-             theta_i_now(i,j) = theta_i_now(i,lay)
-             theta_w_now(i,j) = theta_w_now(i,lay)
-             rho_sn(i,j) = rho_sn(i,lay)
-             t_sn_now(i,j) = t_sn_now(i,lay) 
-             theta_i_old(i,j) = theta_i_old(i,lay)
- 
-          endif
-       enddo
-       l_top = j
-
-        DO ksn = l_top+1, ke_snow, 1
-          hm_sn(i,ksn)   = 0.0_vpp
-          zm_sn(i,ksn)   = 0.0_vpp
-          dzm_sn_now(i,ksn)  = 0.0_vpp
-          theta_i_now(i,ksn) = 0.0_vpp
-          theta_w_now(i,ksn) = 0.0_vpp
-          theta_a_now(i,ksn) = 0.0_vpp
-          theta_i_old(i,ksn) = 0.0_vpp
-          rho_sn(i,ksn)  = 0.0_vpp
-          t_sn_now(i,ksn)    = 0.0_vpp
-          m_sn(i,ksn)    = 0.0_vpp
-          hcap_sn(i,ksn) = 0.0_vpp
-          hcon_sn(i,ksn) = 0.0_vpp
-          hdif_sn(i,ksn) = 0.0_vpp
-        ENDDO
-     
-       ! Update dependent variables
-       !CALL update(top(i), hm_sn(i,:), zm_sn(i,:), dzm_sn_now(i,:), m_sn(i,:)                     , &
-       !            theta_i_now(i,:), theta_w_now(i,:), theta_a_now(i,:),rho_sn(i,:)               , &
-       !            hcap_sn(i,:), hcon_sn(i,:)                                                       )
-l_hsnow = 0.0
-l_mass = 0.0
-   do ksn = 1,top(1)
-!     write(*,*) 'end section I: ',iblock,ksn,theta_i_now(1,ksn),theta_a_now(1,ksn),theta_w_now(1,ksn),t_sn_now(1,ksn)
-      l_hsnow = l_hsnow + dzm_sn_now(1,ksn)
-      l_mass = l_mass + dzm_sn_now(1,ksn)*rho_sn(1,ksn)
-   enddo
-   write(*,'(A20,I6,2F28.16)' ) 'end section V (A): ',ntstep,l_hsnow,l_mass
-
-
-           ! -------------------------
-           ! Height of snow (main) levels
-           ! -------------------------
-                 !$acc loop seq
-                 do ksn=1,l_top
-                    if(ksn .eq. 1) then
-                       hm_sn(i,ksn) = dzm_sn_now(i,ksn)
-                    else
-                       hm_sn(i,ksn) = hm_sn(i,ksn-1) + dzm_sn_now(i,ksn)
-                    endif
-                 enddo  
-         
-           ! --------------------------
-           ! Depth of snow layer (main) levels
-           ! -------------------------
-                 !$acc loop seq
-                 do ksn = l_top,1,-1
-                    zm_sn(i, (l_top+1) - ksn ) = hm_sn(i,ksn) !invert height vector
-                    theta_a_now(i,ksn) = max(0.0_vpp,1.0_vpp - theta_i_now(i,ksn) - theta_w_now(i,ksn))
-                 enddo
-         
-           ! --------------------------
-           ! Snow layer density
-           ! -------------------------
-                  !$acc loop seq
-                  do ksn = 1, l_top, 1
-                     if(theta_i_now(i,ksn) .eq. 0.0_vpp) then
-                        rho_sn(i,ksn) = 0.0_vpp
-                     else
-                        rho_sn(i,ksn) = theta_i_now(i,ksn)*rho_i + theta_w_now(i,ksn)*rho_w
-                     endif
-                  enddo
-                  
-           ! --------------------------
-           ! Heat capacity
-           ! --------------------------
-            !$acc loop seq
-            DO ksn = 1, l_top, 1
-                IF(rho_sn(i,ksn) .LT. eps) THEN
-                  hcap_sn(i,ksn) = 0.0_vpp
-                ELSE
-                  hcap_sn(i,ksn) = (  rho_a   * theta_a_now(i,ksn) * specific_heat_air     &
-                                    + rho_i   * theta_i_now(i,ksn) * specific_heat_ice     &
-                                    + rho_w   * theta_w_now(i,ksn) * specific_heat_water)  &
-                                     / rho_sn(i,ksn)
-                ENDIF
-            ENDDO
-         
-           ! --------------------------
-           ! Heat conductivity
-           ! --------------------------
-            !$acc loop seq
-            DO ksn = 1, l_top, 1
-               hcon_sn(i,ksn) = 2.22_vpp * EXP(1.88_vpp * LOG(rho_sn(i,ksn)/rho_i))
-            ENDDO
-         
-           ! --------------------------
-           ! Snow layer mass
-           ! --------------------------
-            !$acc loop seq
-            DO ksn = 1, l_top, 1
-              IF(ksn .EQ. 1) THEN
-                 m_sn(i,ksn) = zm_sn(i,ksn) * ((theta_i_now(i,ksn) * rho_i) + (theta_w_now(i,ksn) * rho_w))
-               ELSE
-                 m_sn(i,ksn) = ABS(zm_sn(i,ksn) - zm_sn(i,ksn-1))  * ((theta_i_now(i,ksn) * rho_i) + (theta_w_now(i,ksn) * rho_w))
-               ENDIF
-            ENDDO
-
-
-    ENDIF
-    top(i) = l_top
-  ENDDO
-  !$acc end parallel
-
-  ! Apply some fail-safes before doing the settling, which is temperature  dependent
-  ! ------------------------------
-
-  !$acc parallel async default(none)
-  !$acc loop gang vector
-   DO i = ivstart, ivend
-!     t_sn_sfc(i) = MAX(220.0_vpp, MIN(t_sn_sfc(i), t0_melt))
-   ENDDO
-  !!$acc end parallel
-
-
-  !$acc parallel async default(none)
-  !$acc loop gang vector
-  DO i = ivstart, ivend
-
-    !DO ksn = top(i), 1, -1
-    !
-    !write(*,*) ntstep,i,ksn,t_sn_now(i,ksn) != MIN(MAX(220.0_vpp, t_sn_now(i,ksn)), t0_melt)
-    !
-    !ENDDO    
-
-    !$acc loop seq
-    DO ksn = top(i), 1, -1
-
-!      t_sn_now(i,ksn) = MIN(MAX(220.0_vpp, t_sn_now(i,ksn)), t0_melt)
-
-    ENDDO    
-
-  ENDDO
-  !$acc end parallel
-
-
   ! Calculate settling rates
   ! ---------------------------------
 
-  !$acc parallel async
-  !$acc loop gang vector
   DO i = ivstart, ivend
     l_top = top(i)
+
     IF(l_top .GE. 1) THEN ! snow on the ground
-
-      !CALL calc_set_rate(h_snow(i), zm_sn(i,:), dzm_sn_now(i,:), t_sn_now(i,:), m_sn(i,:)        , &
-      !                   theta_i_now(i,:), theta_w_now(i,:), theta_a_now(i,:), theta_i_old(i,:)  , &
-      !                   rho_sn(i,:), top(i), melt_flag(i), zdt)
-
 
      ! Initalizations
      ddz          = 0.0_vpp   ! total change in layer thickness
@@ -2652,31 +1482,22 @@ l_mass = 0.0
 
        !  ... due to loss of ice
        !-------------------
- !      IF(melt_flag) THEN
          IF(theta_i_now(i,ksn) <  theta_i_old(i,ksn)) THEN ! melting ocured in that layers
            rate_1 = (-0.5_vpp/dt) * MAX(0.0_vpp,  (theta_i_old(i,ksn) - theta_i_now(i,ksn)) / theta_i_old(i,ksn) )
            !rate_1 = -0.5_vpp/dt * MAX(0.0_vpp,  (theta_i_old(i,ksn) - theta_i_now(i,ksn)) / theta_i_old(i,ksn) )
          ENDIF
- !      ENDIF
-!       rate_1 = 0.0
        !  ... due to overburden stress
        !-------------------
-      ! Vionnett (2012)
+       ! Vionnett (2012)
        f1   = 1.0_vpp / (1.0_vpp + 60.0_vpp * ((theta_w_now(i,ksn)*rho_w*dzm_sn_now(i,ksn)) / (rho_w * dzm_sn_now(i,ksn))))
        f2   = 1.0_vpp
 
-       eta = f1 * f2 * eta_0 * (rho_sn(i,ksn)/c_eta) * exp(a_eta*(t0_melt - t_sn_now(i,ksn)) + b_eta*rho_sn(i,ksn))
-       rate_2 = -1.0_vpp * (overburden + (m_sn(i,ksn)*g/2.0_vpp)) / eta
+       eta = f1 * f2 * eta_0 * (rho_sn(i,ksn)/c_eta) * exp(a_eta*(t0_melt - t_sn_elem(i,ksn)) + b_eta*rho_sn(i,ksn))
+       rate_2 = -1.0_vpp * (overburden + ( (dzm_sn_now(i,ksn)*rho_sn(i,ksn))*g/2.0_vpp)) / eta
 
-!       if(ntstep .eq. 165052) then
-
-!           write(*,*) i,ksn,f1,f2,overburden,g,eta,eta_0,rho_sn(i,ksn),t_sn_now(i,ksn)
-!       endif
-       ! Andersen (1976)
-!        rate_2 = -(overburden + m_sn(ksn)*g/2.0_vpp)*EXP(-c_factor * (t_sn(ksn) - t0_melt) - c2*rho_sn(ksn)) / eta0
 
        ! increase overburden stress NOTE: How to deal with slope angle should be overburden = m*g*cos(alpha)
-       overburden = overburden + (m_sn(i,ksn) * g)
+       overburden = overburden + ( (dzm_sn_now(i,ksn)*rho_sn(i,ksn)) * g)
 
       ! ... calculate change ...
        !-------------------
@@ -2695,10 +1516,6 @@ l_mass = 0.0
        dz_old = dzm_sn_now(i,ksn)
        dz_new = dz_old + MAX(-1.0_vpp * dzm_sn_now(i,ksn), dzm_sn_now(i,ksn) * tot_rate)
 
-!       if (ntstep .eq. 165052) then
-!          write(*,*) i,ksn,dzm_sn_now(i,ksn),dz_old,MAX(-1.0_vpp * dzm_sn_now(i,ksn), dzm_sn_now(i,ksn) * tot_rate),rate_1,rate_2,dt
-!       endif
-
        ! ... volumetric contents
        theta_i_now(i,ksn) = MAX(0.0_vpp, theta_i_now(i,ksn) * (dz_old / dz_new))    ! ice content
        theta_w_now(i,ksn) = MAX(0.0_vpp, theta_w_now(i,ksn) * (dz_old / dz_new))    ! water content
@@ -2708,228 +1525,133 @@ l_mass = 0.0
 
   ENDDO
 
-
-
-  ! -------------------
-  ! + Re-calculate layer depth from layer thickness
-  ! -------------------
-
-    DO ksn = l_top, 1, -1
-      IF(ksn .EQ. l_top) THEN
-        zm_sn(i,ksn) = dzm_sn_now(i,ksn)
-      ELSE
-        zm_sn(i,ksn) = zm_sn(i,ksn+1) + dzm_sn_now(i,ksn)
-      ENDIF
-    ENDDO
-
-    ! Calculate change in snow depth
-    h_snow(i) = zm_sn(i,1)
     ENDIF
 
-       !write(*,*) 'ddz: ',ntstep,ddz,tmp_rate_1,tmp_rate_2
-
-
   ENDDO
-  !$acc end parallel
 
 ! =============================================================================
 ! - End Section V: Settling
 ! =============================================================================
 
-!if(ntstep .eq. N_IMP) then
-!   do ksn = 1,top(1)
-!     write(*,*) 'end section V: ',ntstep,ksn,theta_i_now(1,ksn),theta_a_now(1,ksn),theta_w_now(1,ksn),t_sn_now(1,ksn),rho_sn(1,ksn)
-!   enddo
-!endif
+  do i = ivstart, ivend
 
-l_hsnow = 0.0
-l_mass  = 0.0
-   do ksn = 1,top(1)
-!     write(*,*) 'end section I: ',iblock,ksn,theta_i_now(1,ksn),theta_a_now(1,ksn),theta_w_now(1,ksn),t_sn_now(1,ksn)
-      l_hsnow = l_hsnow + dzm_sn_now(1,ksn)
-      l_mass  = l_mass  + dzm_sn_now(1,ksn) * rho_sn(1,ksn)
-   enddo
-   write(*,'(A20,I6,2F28.16)' ) 'end section V: ',ntstep,l_hsnow,l_mass !,tmp_rate_1,tmp_rate_2
+    l_top = top(i)
+    l_mergep = merge_point(i)
+    l_thinlayer_merge = 0
 
-! ============================================================================
-! - VARUN's HACK
-! ============================================================================
-    do i = ivstart,ivend
-      l_top = top(i)
-      if( l_top .eq. 1) then
+    if(l_top .GE. 2) THEN ! snow on the ground
+       do ksn = l_top, 2, -1
+          if(dzm_sn_now(i,ksn) .LT. min_height_layer .OR. theta_i_now(i,ksn) .LT. 0.01_vpp) THEN ! layer is quite thin
 
-          ! -------------------
-          ! Move layers up
-          ! -------------------
+            l_thinlayer_merge = l_thinlayer_merge + 1
 
-          ! Layer thickness
-          tmp_sn(1:ke_snow) = dzm_sn_now(i,1:ke_snow)
+            ! -------------------
+            ! Aggregate with lower layer - Adjust properties
+            ! -------------------
+            theta_i_now(i,ksn-1) = (theta_i_now(i,ksn)*dzm_sn_now(i,ksn)                                      &
+                             + theta_i_now(i,ksn-1)*dzm_sn_now(i,ksn-1)) / (dzm_sn_now(i,ksn) + dzm_sn_now(i,ksn-1))  ! volumetric ice content
 
-          !$acc loop seq
-          DO ksn = 2, ke_snow-1, 1
-            dzm_sn_now(i,ksn+1) = tmp_sn(ksn)
-          ENDDO
+            theta_w_now(i,ksn-1) = (theta_w_now(i,ksn)*dzm_sn_now(i,ksn)                                      &
+                             + theta_w_now(i,ksn-1)*dzm_sn_now(i,ksn-1)) / (dzm_sn_now(i,ksn) + dzm_sn_now(i,ksn-1))  ! volumetric water content
 
-          ! Volumetric ice content
-          tmp_sn(1:ke_snow) = theta_i_now(i,1:ke_snow)
+            t_sn_elem(i,ksn-1) = (t_sn_elem(i,ksn)*dzm_sn_now(i,ksn)                                      &
+                                + t_sn_elem(i,ksn-1)*dzm_sn_now(i,ksn-1)) / (dzm_sn_now(i,ksn) + dzm_sn_now(i,ksn-1))  ! volumetric ice content
+           
+            dzm_sn_now(i,ksn-1)  = dzm_sn_now(i,ksn) + dzm_sn_now(i,ksn-1)        ! layer thickness
 
-          !$acc loop seq
-          DO ksn = 2, ke_snow-1, 1
-            theta_i_now(i,ksn+1) = tmp_sn(ksn)
-          ENDDO
+            ! ... and reset roperties
+            dzm_sn_now(i,ksn)  = 0.0_vpp
+            theta_i_now(i,ksn) = 0.0_vpp
+            theta_w_now(i,ksn) = 0.0_vpp
+            theta_a_now(i,ksn) = 0.0_vpp
+            t_sn_elem(i,ksn)    = 0.0_vpp
 
-          ! Volumetric water content
-          tmp_sn(1:ke_snow) = theta_w_now(i,1:ke_snow)
+          endif ! if element to be merged or not
 
-          !$acc loop seq
-          DO ksn = 2, ke_snow-1, 1
-            theta_w_now(i,ksn+1) = tmp_sn(ksn)
-          ENDDO
+          j=0
+          do lay=1,l_top
+             if((theta_i_now(i,lay) .gt. 0.01_vpp) ) then
+    
+                j=j+1
+                dzm_sn_now(i,j) = dzm_sn_now(i,lay)
+                theta_i_now(i,j) = theta_i_now(i,lay)
+                theta_w_now(i,j) = theta_w_now(i,lay)
+                theta_a_now(i,j) = theta_a_now(i,lay)
+                t_sn_elem(i,j) = t_sn_elem(i,lay) 
+ 
+             endif
+          enddo
+          l_top = j
 
-          ! Layer temperature
-          tmp_sn(1:ke_snow) = t_sn_now(i,1:ke_snow)
+          do lay = l_top+1, ke_snow, 1
+             dzm_sn_now(i,lay)  = 0.0_vpp
+             theta_i_now(i,lay) = 0.0_vpp
+             theta_w_now(i,lay) = 0.0_vpp
+             theta_a_now(i,lay) = 0.0_vpp
+             t_sn_elem(i,lay)    = 0.0_vpp
+          enddo
 
-          !$acc loop seq
-          DO ksn = 2, ke_snow-1, 1
-            t_sn_now(i,ksn+1) = tmp_sn(ksn)
-          ENDDO
-
-          ! ---------------------
-          ! Split bottom layer
-          ! --------------------
-
-          dzm_sn_now(i,1) = dzm_sn_now(i,1)/2.0
-          dzm_sn_now(i,2) = dzm_sn_now(i,1)
-
-          theta_i_now(i,2) = theta_i_now(i,1)
-          theta_w_now(i,2) = theta_w_now(i,1)
-
-          t_sn_now(i,2)    = t_sn_now(i,1)
-
-          ! Update dependent variables
-          l_top = l_top + 1
-
-              !!! replacing Update function call
-              ! -------------------------
-              ! Height of snow (main) levels
-              ! -------------------------
-                    !$acc loop seq
-                    do ksn=1,l_top
-                       if(ksn .eq. 1) then
-                          hm_sn(i,ksn) = dzm_sn_now(i,ksn)
-                       else
-                          hm_sn(i,ksn) = hm_sn(i,ksn-1) + dzm_sn_now(i,ksn)
-                       endif
-                    enddo  
-      
-              ! --------------------------
-              ! Depth of snow layer (main) levels
-              ! -------------------------
-                    !$acc loop seq
-                    do ksn = l_top,1,-1
-                       zm_sn(i, (l_top+1) - ksn ) = hm_sn(i,ksn) !invert height vector
-                       theta_a_now(i,ksn) = max(0.0_vpp,1.0_vpp - theta_i_now(i,ksn) - theta_w_now(i,ksn))
-                    enddo
-      
-              ! --------------------------
-              ! Snow layer density
-              ! -------------------------
-                     !$acc loop seq
-                     do ksn = 1, l_top, 1
-                        if(theta_i_now(i,ksn) .eq. 0.0_vpp) then
-                           rho_sn(i,ksn) = 0.0_vpp
-                        else
-                           rho_sn(i,ksn) = theta_i_now(i,ksn)*rho_i + theta_w_now(i,ksn)*rho_w
-                        endif
-                     enddo
-                     
-              ! --------------------------
-              ! Heat capacity
-              ! --------------------------
-               !$acc loop seq
-               DO ksn = 1, l_top, 1
-                   IF(rho_sn(i,ksn) .LT. eps) THEN
-                     hcap_sn(i,ksn) = 0.0_vpp
-                   ELSE
-                     hcap_sn(i,ksn) = (  rho_a   * theta_a_now(i,ksn) * specific_heat_air     &
-                                       + rho_i   * theta_i_now(i,ksn) * specific_heat_ice     &
-                                       + rho_w   * theta_w_now(i,ksn) * specific_heat_water)  &
-                                        / rho_sn(i,ksn)
-                   ENDIF
-               ENDDO
-      
-              ! --------------------------
-              ! Heat conductivity
-              ! --------------------------
-               !$acc loop seq
-               DO ksn = 1, l_top, 1
-                  hcon_sn(i,ksn) = 2.22_vpp * EXP(1.88_vpp * LOG(rho_sn(i,ksn)/rho_i))
-               ENDDO
-      
-              ! --------------------------
-              ! Snow layer mass
-              ! --------------------------
-               !$acc loop seq
-               DO ksn = 1, l_top, 1
-                 IF(ksn .EQ. 1) THEN
-                    m_sn(i,ksn) = zm_sn(i,ksn) * ((theta_i_now(i,ksn) * rho_i) + (theta_w_now(i,ksn) * rho_w))
-                  ELSE
-                    m_sn(i,ksn) = ABS(zm_sn(i,ksn) - zm_sn(i,ksn-1))  * ((theta_i_now(i,ksn) * rho_i) + (theta_w_now(i,ksn) * rho_w))
-                  ENDIF
-               ENDDO
-
-         !CALL update(top(i), hm_sn(i,:), zm_sn(i,:), dzm_sn_now(i,:), m_sn(i,:)         , &
-         !            theta_i_now(i,:), theta_w_now(i,:), theta_a_now(i,:), rho_sn(i,:)  , &
-         !            hcap_sn(i,:), hcon_sn(i,:))
+       enddo ! end of loop over elements for merging of thin layers
 
 
-      endif
-          ! Update a few values NOTE this could maybe also happen in update()
-         h_snow(i)   = hm_sn(i,l_top)
-         t_sn_sfc(i) = t_sn_now(i,l_top)
+       ! split merge-point layer: remove one cm from this layer
 
-     top(i) = l_top 
-    enddo 
+       if ( l_thinlayer_merge .gt. 0 ) then
 
-   do ksn = 1,top(1)
- !    write(*,*) 'before section VI: ',ntstep,ksn,theta_i_now(1,ksn),theta_a_now(1,ksn),theta_w_now(1,ksn),t_sn_now(1,ksn),t_sn_sfc(1)
-   enddo
+          if( (l_mergep .eq. 1) .and. (dzm_sn_now(i,1) < 0.01) ) then
+          
+          
+          else
 
+            ! create space for new layers from merge-point layer split
+             dzm_sn_now(l_mergep+1+l_thinlayer_merge:l_top+l_thinlayer_merge,i) =  dzm_sn_now( l_mergep+1:l_top , i )
+            theta_i_now(l_mergep+1+l_thinlayer_merge:l_top+l_thinlayer_merge,i) = theta_i_now( l_mergep+1:l_top , i )
+            theta_w_now(l_mergep+1+l_thinlayer_merge:l_top+l_thinlayer_merge,i) = theta_w_now( l_mergep+1:l_top , i )
+            theta_a_now(l_mergep+1+l_thinlayer_merge:l_top+l_thinlayer_merge,i) = theta_a_now( l_mergep+1:l_top , i )
+              t_sn_elem(l_mergep+1+l_thinlayer_merge:l_top+l_thinlayer_merge,i) =   t_sn_elem( l_mergep+1:l_top , i )
+
+            do j=1,l_thinlayer_merge
+
+                 dzm_sn_now(l_mergep+j,i) = new_snow_elem
+                theta_i_now(l_mergep+j,i) = theta_i_now(l_mergep,i)
+                theta_a_now(l_mergep+j,i) = theta_a_now(l_mergep,i)
+                theta_w_now(l_mergep+j,i) = theta_w_now(l_mergep,i)
+                  t_sn_elem(l_mergep+j,i) =   t_sn_elem(l_mergep,i) 
+
+            enddo
+
+                  dzm_sn_now(l_mergep,i) = dzm_sn_now(l_mergep,i) - (new_snow_elem) * l_thinlayer_merge
+                  l_top = l_top + l_thinlayer_merge
+         
+          endif
+
+       endif
+
+       if ( (dzm_sn_now(l_mergep,i) < 0.01) .and. (l_mergep > 1) ) then
+            l_mergep = l_mergep - 1
+       endif
+
+   endif
+ enddo
 
 ! =============================================================================
 ! + Begin Section VI: Preparations for the next time step 
 ! =============================================================================
-  !$acc parallel async
-  !$acc loop gang vector
   DO i = ivstart, ivend
       l_top = top(i)
       if ( l_top .ge. 1) then
            ! update
-           ! -------------------------
-           ! Height of snow (main) levels
-           ! -------------------------
-                 !$acc loop seq
-                 do ksn=1,l_top
-                    if(ksn .eq. 1) then
-                       hm_sn(i,ksn) = dzm_sn_now(i,ksn)
-                    else
-                       hm_sn(i,ksn) = hm_sn(i,ksn-1) + dzm_sn_now(i,ksn)
-                    endif
-                 enddo  
          
            ! --------------------------
            ! Depth of snow layer (main) levels
            ! -------------------------
-                 !$acc loop seq
                  do ksn = l_top,1,-1
-                    zm_sn(i, (l_top+1) - ksn ) = hm_sn(i,ksn) !invert height vector
                     theta_a_now(i,ksn) = max(0.0_vpp,1.0_vpp - theta_i_now(i,ksn) - theta_w_now(i,ksn))
                  enddo
          
            ! --------------------------
            ! Snow layer density
            ! -------------------------
-                  !$acc loop seq
                   do ksn = 1, l_top, 1
                      if(theta_i_now(i,ksn) .eq. 0.0_vpp) then
                         rho_sn(i,ksn) = 0.0_vpp
@@ -2937,62 +1659,11 @@ l_mass  = 0.0
                         rho_sn(i,ksn) = theta_i_now(i,ksn)*rho_i + theta_w_now(i,ksn)*rho_w
                      endif
                   enddo
-                  
-           ! --------------------------
-           ! Heat capacity
-           ! --------------------------
-                  !$acc loop seq
-                  DO ksn = 1, l_top, 1
-                      IF(rho_sn(i,ksn) .LT. eps) THEN
-                        hcap_sn(i,ksn) = 0.0_vpp
-                      ELSE
-                        hcap_sn(i,ksn) = (  rho_a   * theta_a_now(i,ksn) * specific_heat_air     &
-                                          + rho_i   * theta_i_now(i,ksn) * specific_heat_ice     &
-                                          + rho_w   * theta_w_now(i,ksn) * specific_heat_water)  &
-                                           / rho_sn(i,ksn)
-                      ENDIF
-                  ENDDO
          
-           ! --------------------------
-           ! Heat conductivity
-           ! --------------------------
-                  !$acc loop seq
-                  DO ksn = 1, l_top, 1
-                     hcon_sn(i,ksn) = 2.22_vpp * EXP(1.88_vpp * LOG(rho_sn(i,ksn)/rho_i))
-                  ENDDO
-         
-           ! --------------------------
-           ! Snow layer mass
-           ! --------------------------
-                 !$acc loop seq
-                 DO ksn = 1, l_top, 1
-                   IF(ksn .EQ. 1) THEN
-                      m_sn(i,ksn) = zm_sn(i,ksn) * ((theta_i_now(i,ksn) * rho_i) + (theta_w_now(i,ksn) * rho_w))
-                    ELSE
-                      m_sn(i,ksn) = ABS(zm_sn(i,ksn) - zm_sn(i,ksn-1))  * ((theta_i_now(i,ksn) * rho_i) + (theta_w_now(i,ksn) * rho_w))
-                    ENDIF
-                 ENDDO
-
       ENDIF
 
       top(i) = l_top
     ENDDO
-    !$acc end parallel
-
-!if(ntstep .eq. N_IMP) then
-   do ksn = 1,top(1)
-!     write(*,*) 'end section VI: ',iblock,ksn,theta_i_now(1,ksn),theta_a_now(1,ksn),theta_w_now(1,ksn),t_sn_now(1,ksn)
-   enddo
-!endif
-l_hsnow = 0.0
-l_mass  = 0.0
-   do ksn = 1,top(1)
-!     write(*,*) 'end section I: ',iblock,ksn,theta_i_now(1,ksn),theta_a_now(1,ksn),theta_w_now(1,ksn),t_sn_now(1,ksn)
-      l_hsnow = l_hsnow + dzm_sn_now(1,ksn)
-      l_mass  = l_mass  + dzm_sn_now(1,ksn)*rho_sn(1,ksn)
-   enddo
-   write(*,'(A20,I6,2F28.16)' ) 'end section VI: ',ntstep,l_hsnow,l_mass
-
 
 ! =============================================================================
 ! + Begin Section VII: Updating of prognostic variables
@@ -3001,8 +1672,6 @@ l_mass  = 0.0
     ! Update snow layer properties
     ! -------------------------------------
 
-    !$acc parallel async default(none)
-    !$acc loop seq
     DO ksn = 1, ke_snow, 1
       DO i = ivstart, ivend
 
@@ -3016,30 +1685,19 @@ l_mass  = 0.0
 
       END DO
     END DO
-    !$acc end parallel
 
 
     ! Calculate snow water equivialent
     ! -------------------------------------
-
-    !$acc parallel async default(none)
-    !$acc loop seq
     DO ksn = 1, ke_snow, 1
       DO i = ivstart, ivend
-
        swe_sn(i) = swe_sn(i) + ( dzm_sn_now(i,ksn) * rho_sn(i,ksn) ) 
-
       END DO
     ENDDO
-    !$acc end parallel
-
-
 
     ! Update snow height and surface temperature
     ! -----------------------------
 
-    !$acc parallel async default(none)
-    !$acc loop gang vector
     DO i = ivstart, ivend
       top_sn_new (i) = REAL(top(i))    ! index of first (top) snow layer
       hn_sn_new  (i) = hn_sn_now(i)    ! new snow storage
@@ -3047,10 +1705,11 @@ l_mass  = 0.0
       top_sn_now (i) = REAL(top(i))    ! index of first (top) snow layer
 
       IF(top(i) .GE. 1) THEN
-        h_snow     (i) = hm_sn(i,top(i))   ! snow height NOTE: for this line to work
-                                        !                   the snow height update needs to be commented
-                                        !                   out in sfc_terra.f90
-                                        !                   or #ifdef later on
+
+         h_snow(i) = 0.0_vpp
+         do ksn = 1, ke_snow,1
+            h_snow(i) = h_snow(i) + dzm_sn_now(i,ksn)
+         enddo
       ELSE
          h_snow(i) = 0.0_vpp
       ENDIF
@@ -3061,17 +1720,11 @@ l_mass  = 0.0
         w_snow_new (i) = swe_sn(i)/1000.0_vpp
       endif
     END DO
-    !$acc end parallel
-
-
-
 
 
     ! Update turbulent fluxes
     ! -----------------------------
 
-    !$acc parallel async default(none)
-    !$acc loop gang vector
     DO i = ivstart, ivend
 
       zshfl_snow(i) = sh_sn(i)
@@ -3079,40 +1732,17 @@ l_mass  = 0.0
  !     zqhfl_snow(i) = lh_sn(i)/lh_s
     
     ENDDO
-    !$acc end parallel
-
-
-      if( mod(ntstep,120) .eq. 0) then
-!          write(*,*) 'hsnow: ',iblock,ntstep,h_snow(1),sobs(1),prs_gsp(1),prr_gsp(1),dzm_sn_now(1,:),top(1)
-      endif
-
-!if(ntstep .eq. N_IMP) then
-   do ksn = 1,top(1)
-!     write(*,*) 'end section VII: ',ntstep,ksn,theta_i_now(1,ksn),theta_a_now(1,ksn),theta_w_now(1,ksn),t_sn_now(1,ksn)
-   enddo
-!endif
-l_hsnow = 0.0
-l_mass  = 0.0
-   do ksn = 1,top(1)
-!     write(*,*) 'end section I: ',iblock,ksn,theta_i_now(1,ksn),theta_a_now(1,ksn),theta_w_now(1,ksn),t_sn_now(1,ksn)
-      l_hsnow = l_hsnow + dzm_sn_now(1,ksn)
-      l_mass  = l_mass  + dzm_sn_now(1,ksn) * rho_sn(1,ksn)
-   enddo
-   write(*,'(A20,I6,2F28.16)' ) 'end section VII: ',ntstep,l_hsnow,l_mass
 
 
     if( mod(ntstep,120) .eq. 0) then 
        open(22, file = './out/pro_snow.txt')
        write(22,'(A7,   2I12.5,a,/)',    ADVANCE = 'YES') 'idx'         , ntstep, top(1)
-       write(22,'(A7,  1000F12.3,a,/)',   ADVANCE = 'YES') 'hm_sn'      , hm_sn(1,:)
-       write(22,'(A7,  1000F12.3,a,/)',   ADVANCE = 'YES') 'zm_sn'      , zm_sn(1,:)
        write(22,'(A7,  1000F12.3,a,/)',   ADVANCE = 'YES') 'dz'         , dzm_sn_now(1,:)
        write(22,'(A7,  1000F12.3,a,/)',   ADVANCE = 'YES') 't_sn'       , t_sn_now(1,:)
        write(22,'(A,   1000F12.3,a,/)',   ADVANCE = 'YES') 'theta_i'    , theta_i_now(1,:)
        write(22,'(A,   1000F12.3,a,/)',   ADVANCE = 'YES') 'theta_w'    , theta_w_now(1,:)
        write(22,'(A,   1000F12.3,a,/)',   ADVANCE = 'YES') 'theta_a'    , theta_a_now(1,:)
        write(22,'(A7,  1000F12.3,a,/)',   ADVANCE = 'YES') 'rho_sn'     , rho_sn(1,:)
-       write(22,'(A7,  1000F12.3,a,/)',   ADVANCE = 'YES') 'm_sn'       , m_sn(1,:)
        write(22,'(A,   1000F12.3,a,/)',   ADVANCE = 'YES') 'hcap_sn'    , hcap_sn(1,:)
        write(22,'(A,   1000F12.3,a,/)',   ADVANCE = 'YES') 'hcon_sn'    , hcon_sn(1,:)
        write(22,'(A,   1000F12.3,a,/)',   ADVANCE = 'YES') 'hdif_sn'    , hdif_sn(1,:)
@@ -3138,8 +1768,6 @@ l_mass  = 0.0
 ! - End Section '?': Update prognostic variables
 ! ------------------------------------------------------------------------------
 
-!$acc end data
-!$acc end data
 
 
 END SUBROUTINE snowpolino
@@ -3155,10 +1783,4 @@ END MODULE sfc_snow
 !==============================================================================
 ! + End of module src_soil_multlay
 !==============================================================================
-
-
-
-
-
-
 

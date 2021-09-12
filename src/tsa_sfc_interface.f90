@@ -879,11 +879,13 @@ SUBROUTINE tsa_sfc_organize (ib, ipend, ierror, yerrmsg)
       fr_paved_t     , sa_uf_t        , shfl_s_t       , lhfl_s_t       , qvfl_s_t       , &
       t_g_new_t      , snow_melt_t    , tsnred_t       , dum1fl_s_t     , dum2fl_s_t
 
-  REAL (KIND=wp), DIMENSION(nproma,0:ke_soil+1)             ::                             &
+  REAL (KIND=wp), DIMENSION(nproma,0:ke_soil+1)            ::                            &
       t_so_now_t     , t_so_new_t
 !VS <
-  REAL (KIND=vpp), DIMENSION(nproma,1:ke_snow)             ::                            &
-      t_sn_now_t     , t_sn_new_t                                                       , &
+  REAL (KIND=vpp), DIMENSION(nproma,1:ke_snow+1)           ::                            &
+      t_sn_now_t     , t_sn_new_t                                                       
+
+  REAL (KIND=vpp), DIMENSION(nproma,1:ke_snow)             ::                             &
       theta_i_now_t  , theta_i_new_t                                                    , &
       theta_w_now_t  , theta_w_new_t                                                    , &
       theta_a_now_t  , theta_a_new_t                                                    , &
@@ -1166,7 +1168,7 @@ SUBROUTINE tsa_sfc_organize (ib, ipend, ierror, yerrmsg)
         ifull = mind_landgp(il,ib)
 
         ! Use input field in working precision
-        t_sn_now_t    (il,k) = t_sn_b    (ifull,k)
+        !t_sn_now_t    (il,k) = t_sn_b    (ifull,k)
         theta_i_now_t (il,k) = theta_i_b (ifull,k)
         theta_w_now_t (il,k) = theta_w_b (ifull,k)
         theta_a_now_t (il,k) = theta_a_b (ifull,k)
@@ -1176,6 +1178,20 @@ SUBROUTINE tsa_sfc_organize (ib, ipend, ierror, yerrmsg)
       ENDDO
     ENDDO
     !$acc end parallel
+
+    !$acc parallel async
+    DO k = 1,ke_snow+1
+      !$acc loop gang vector private (ifull)
+      DO il = 1, n_landgp(ib)
+        ! grid point index in the full variable
+        ifull = mind_landgp(il,ib)
+        ! Use input field in working precision
+        t_sn_now_t    (il,k) = t_sn_b    (ifull,k)
+      ENDDO
+    ENDDO
+    !$acc end parallel
+
+
 
     ! 2D fields
     !$acc parallel async
@@ -1686,21 +1702,12 @@ IF(lsnow) THEN
 
        ! soil
        t_so_now          = t_so_now_t         (:,:)     , & !INOUT soil temperature (main level)             (  K  )
-       t_so_new          = t_so_new_t         (:,:)     , & !OUT soil temperature (main level)               (  K  )
+       t_so_new          = t_so_new_t         (:,:)       & !OUT soil temperature (main level)               (  K  )
 
-       w_so_now          = w_so_now_t         (:,:)     , & !IN  total water      content (ice+liquid)      (m H20)
-       w_so_new          = w_so_new_t         (:,:)     , & !OUT total water      content (ice+liquid)      (m H20)
+!       w_so_now          = w_so_now_t         (:,:)     , & !IN  total water      content (ice+liquid)      (m H20)
+!       w_so_new          = w_so_new_t         (:,:)     , & !OUT total water      content (ice+liquid)      (m H20)
 
-       w_so_ice_now      = w_so_ice_now_t     (:,:)     , & !IN  ice content                                 (m H20)
-       w_so_ice_new      = w_so_ice_new_t     (:,:)     , & !OUT ice content                                 (m H20)
-
-       zmls              = czmls              (:)       , & !IN processing soil level structure
-
-       plcov             = plcov_t            (:)       , & !IN fraction of plant cover                        --
-       rootdp            = rootdp_t           (:)       , & !IN depth of the roots                           ( m  )
-
-       soiltyp_subs      = isoiltyp_t         (:)         ) !IN type of the soil       (keys 0-9)              --
-
+      )
     !write(*,*) 'HOLY SNOW: ', h_snow_t 
 
     ! and call diagnosis for snow fraction and computation of t_g_new
@@ -1781,7 +1788,7 @@ IF(lsnow) THEN
     !$acc end parallel
 
 
-   ! 3D fields
+    ! 3D fields
     !$acc parallel async
     DO k = 1, ke_snow
       !$acc loop gang vector private (ifull)
@@ -1807,6 +1814,22 @@ IF(lsnow) THEN
       ENDDO
     ENDDO
     !$acc end parallel
+
+    !$acc parallel async
+    DO k = 1, ke_snow+1
+      !$acc loop gang vector private (ifull)
+      DO il = 1, n_landgp(ib)
+        ! grid point index in the full variable
+        ifull = mind_landgp(il,ib)
+
+        t_sn_b     (ifull,k)       = t_sn_now_t (il,k)
+        t_sn_new_b (ifull,k)       = t_sn_new_t (il,k)
+
+      ENDDO
+    ENDDO
+    !$acc end parallel
+
+
 
    ! more 2-D fields
 
@@ -2093,8 +2116,9 @@ INTEGER :: izl, ist
   ALLOCATE ( dzh_snow_new_t     (nproma,  ke_snow) ,STAT=izl ); dzh_snow_new_t      = 0.0_wp; ist=ist+izl
 
 !VS <
-  ALLOCATE ( t_sn_now_t         (nproma,1:ke_snow) ,STAT=izl ); t_sn_now_t    = 0.0_wp; ist=ist+izl
-  ALLOCATE ( t_sn_new_t         (nproma,1:ke_snow) ,STAT=izl ); t_sn_new_t    = 0.0_wp; ist=ist+izl
+  ALLOCATE ( t_sn_now_t         (nproma,1:ke_snow+1) ,STAT=izl ); t_sn_now_t    = 0.0_wp; ist=ist+izl
+  ALLOCATE ( t_sn_new_t         (nproma,1:ke_snow+1) ,STAT=izl ); t_sn_new_t    = 0.0_wp; ist=ist+izl
+!
   ALLOCATE ( theta_i_now_t      (nproma,1:ke_snow) ,STAT=izl ); theta_i_now_t = 0.0_wp; ist=ist+izl
   ALLOCATE ( theta_i_new_t      (nproma,1:ke_snow) ,STAT=izl ); theta_i_new_t = 0.0_wp; ist=ist+izl
   ALLOCATE ( theta_w_now_t      (nproma,1:ke_snow) ,STAT=izl ); theta_w_now_t = 0.0_wp; ist=ist+izl

@@ -602,7 +602,7 @@ SUBROUTINE calc_tch(t0, t1, tch, uv, q1, h_snow, p)
 ! + Calculate transfer coefficient
 ! -------------------------
 
-   tch = karman**2 / ( (LOG(z_ref/z0) - psi_m*zeta) * (LOG(z_ref/z0) - psi_s*zeta) )
+   tch = (uv*(karman*karman)) / ( (LOG(z_ref/z0) - psi_m*zeta) * (LOG(z_ref/z0) - psi_s*zeta) )
 
  ! NEUTRAL
  !   tch = karman**2 /  ( LOG(z_ref/z0) * LOG(z_ref/z0) )
@@ -696,12 +696,12 @@ SUBROUTINE turb_flux(sh, lh, p, t1, t0, q1, tch, uv)
  ! -------------------------
 
    ! Latent heat flux
-   lh = tch * uv * rho_atm * lh_v * (q1 - q0)
+   lh = tch * rho_atm * lh_v * (q1 - q0)
    lh = MIN(150.0_vpp,MAX(-150.0_vpp,lh))
 
 
    ! Sensible heat flux
-   sh = tch * uv * rho_atm * specific_heat_air * (t1 - t0)
+   sh = tch * rho_atm * specific_heat_air * (t1 - t0)
    sh = MIN(250.0_vpp,MAX(-250.0_vpp,sh))
 
 

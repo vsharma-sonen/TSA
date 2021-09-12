@@ -109,7 +109,7 @@ USE data_fields,           ONLY:                                            &
     w_snow, rho_snow, freshsnow, t_snow, t_g, w_i, qv_s, tch, tcm,          &
     pabs, sobs, thbs, llandmask, lai, plcov, rootdp, soiltyp, hsurf,        &
     fr_land, rlon, rlat, t_cl, w_cl, w_so_ice, rsmin2d,                     &
-    u_bd, t_bd
+    u_bd, t_bd, h_snow
 
 USE data_modelconfig,      ONLY:                                            &
     pollon, pollat, polgam, dlon, dlat, startlon, startlat, ke_soil, czmls, &
@@ -490,6 +490,11 @@ SUBROUTINE read_metforc(n,doy,month)
                 !write(*,*) 'albedo: ',ntstep, also,t_g(i,j,1)
                 sobs(i,j)= so_down_bd(i,j,1)*(1.0_wp-also)
                 thbs(i,j)= th_down_bd(i,j,1)-(1.0_wp-alth)*sigma*(t_g(i,j,1))**4
+
+                if( (h_snow(i,j,1) > 0) .or. (h_snow(i,j,2) > 0) ) then
+                    thbs(i,j) = th_down_bd(i,j,1)
+                endif
+
              ENDIF
           ENDDO
        ENDDO
@@ -504,6 +509,12 @@ SUBROUTINE read_metforc(n,doy,month)
                 !write(*,*) 'albedo: ',ntstep, also 
                 sobs(i,j)= so_down_bd(i,j,n1)*(1.0_wp-also)
                 thbs(i,j)= th_down_bd(i,j,n1)-(1.0_wp-alth)*sigma*t_g(i,j,nnow)**4
+
+                if( (h_snow(i,j,1) > 0) .or. (h_snow(i,j,2) > 0) ) then
+                    thbs(i,j) = th_down_bd(i,j,1)
+                endif
+
+
              ENDIF
           ENDDO
        ENDDO
